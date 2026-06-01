@@ -1,0 +1,28 @@
+services:
+  wattwise:
+    build: .
+    image: wattwise:latest
+    container_name: wattwise
+    restart: unless-stopped
+    ports:
+      - "${PORT:-9521}:9521"
+    volumes:
+      - wattwise_data:/app/data
+      - wattwise_backups:/app/backups
+    env_file:
+      - .env
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - wattwise_net
+
+volumes:
+  wattwise_data:
+  wattwise_backups:
+
+networks:
+  wattwise_net:
+    driver: bridge

@@ -1,0 +1,29 @@
+# Environment — never commit secrets or local config
+.env
+
+# Database — data stays on the host, not in the repo
+*.db
+*.db-shm
+*.db-wal
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+
+# macOS
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Docker build artifacts
+*.tar

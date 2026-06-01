@@ -1,0 +1,3898 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wattwise</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow+Condensed:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+/* ── THEME TOKENS ────────────────────────────────────────────────────────── */
+:root {
+  --prod:    #f59e0b;
+  --cons:    #22d3ee;
+  --surplus: #34d399;
+  --deficit: #f87171;
+  --ev:      #a78bfa;
+}
+
+[data-theme="dark"] {
+  --bg:      #0d0f12;
+  --bg2:     #131619;
+  --bg3:     #1a1e24;
+  --border:  #252b33;
+  --text:    #e2e8f0;
+  --muted:   #64748b;
+  --input-bg:#1a1e24;
+  --shadow:  rgba(0,0,0,0.4);
+}
+
+[data-theme="light"] {
+  --bg:      #f1f5f9;
+  --bg2:     #ffffff;
+  --bg3:     #f8fafc;
+  --border:  #e2e8f0;
+  --text:    #0f172a;
+  --muted:   #94a3b8;
+  --input-bg:#f1f5f9;
+  --shadow:  rgba(0,0,0,0.08);
+}
+
+/* ── RESET ───────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Barlow Condensed', sans-serif;
+  min-height: 100vh;
+  transition: background 0.25s, color 0.25s;
+}
+
+/* ── HEADER ──────────────────────────────────────────────────────────────── */
+header {
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  box-shadow: 0 1px 6px var(--shadow);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.logo {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+.logo-icon { font-size: 20px; }
+.logo-text {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--prod);
+}
+.logo-sub {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 2px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* ── THEME TOGGLE ────────────────────────────────────────────────────────── */
+.theme-switcher {
+  display: flex;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+}
+
+.theme-btn {
+  padding: 7px 13px;
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  transition: background 0.15s, color 0.15s;
+}
+
+.theme-btn:hover { color: var(--text); }
+
+.theme-btn.active {
+  background: var(--border);
+  color: var(--prod);
+}
+
+/* ── IMPORT BUTTON ───────────────────────────────────────────────────────── */
+.import-btn {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  padding: 7px 14px;
+  border-radius: 4px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 13px;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.import-btn:hover { border-color: var(--prod); color: var(--prod); }
+
+/* ── DATE RANGE BAR ─────────────────────────────────────────────────────── */
+.date-range-bar {
+  background: var(--bg3);
+  border-bottom: 1px solid var(--border);
+  padding: 6px 24px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  color: var(--muted);
+}
+.date-range-bar input[type=date] {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  padding: 3px 7px;
+  cursor: pointer;
+}
+.date-range-bar input[type=date]:focus { outline: none; border-color: var(--prod); }
+.date-preset {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--muted);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  padding: 3px 7px;
+  cursor: pointer;
+  letter-spacing: 1px;
+  transition: all 0.15s;
+}
+.date-preset:hover, .date-preset.active { border-color: var(--prod); color: var(--prod); }
+
+/* ── STATUS BAR ──────────────────────────────────────────────────────────── */
+.status-bar {
+  background: var(--bg3);
+  border-bottom: 1px solid var(--border);
+  padding: 5px 24px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  color: var(--muted);
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+.status-bar b { color: var(--text); font-weight: 400; }
+
+/* ── MAIN ────────────────────────────────────────────────────────────────── */
+main {
+  padding: 20px 24px 40px;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 22px;
+  max-width: 1400px;
+  margin: 0 auto;
+  align-items: flex-start;
+}
+
+/* Full-width section — takes whole row */
+.section-full { flex: 0 0 100%; min-width: 0; }
+
+/* Half-width section — two per row, with gap accounted for */
+.section-half { flex: 0 0 calc(50% - 11px); min-width: 0; }
+
+/* ── SECTION LABEL ───────────────────────────────────────────────────────── */
+.section-label {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 3px;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+/* ── STAT CARDS ──────────────────────────────────────────────────────────── */
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 10px;
+}
+
+.card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 14px 16px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-shadow: 0 1px 4px var(--shadow);
+}
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 3px; height: 100%;
+  background: var(--card-accent, var(--border));
+}
+.card:hover {
+  border-color: var(--card-accent, var(--border));
+  box-shadow: 0 2px 10px var(--shadow);
+}
+.card-label {
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 7px;
+}
+.card-value {
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--card-accent, var(--text));
+}
+.card-unit {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--muted);
+  margin-left: 3px;
+}
+.card-sub {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 5px;
+}
+
+/* ── COMBINED CARD ROWS ──────────────────────────────────────────────────── */
+.card-title {
+  font-size: 12px;
+  letter-spacing: 2px;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+.card-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-rows: auto auto;
+  align-items: baseline;
+  gap: 0 6px;
+  padding: 4px 0;
+}
+.card-row-label {
+  font-size: 12px;
+  color: var(--muted);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  grid-column: 1;
+  grid-row: 1;
+}
+.card-row-value {
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1;
+  grid-column: 2;
+  grid-row: 1;
+  white-space: nowrap;
+}
+.card-row-unit {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--muted);
+  margin-left: 2px;
+}
+.card-row-sub {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  color: var(--muted);
+  grid-column: 1 / -1;
+  grid-row: 2;
+  margin-top: 1px;
+}
+.card-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 3px 0;
+  opacity: 0.5;
+}
+
+/* ── SCATTER TOGGLES ─────────────────────────────────────────────────────── */
+.toggle-group {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.toggle-group-label {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 2px;
+  margin-right: 2px;
+}
+.tog {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 1px;
+  padding: 3px 8px;
+  border-radius: 3px;
+  border: 1px solid var(--border);
+  background: var(--bg3);
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.tog:hover { color: var(--text); border-color: var(--text); }
+.tog.active { background: var(--border); color: var(--text); border-color: var(--text); }
+.tog.active-prod  { border-color: var(--prod);    color: var(--prod);    background: var(--bg2); }
+.tog.active-cons  { border-color: var(--cons);    color: var(--cons);    background: var(--bg2); }
+.tog.active-ev    { border-color: var(--ev);      color: var(--ev);      background: var(--bg2); }
+.tog.active-year  { border-color: var(--surplus); color: var(--surplus); background: var(--bg2); }
+.year-chips {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+
+/* ── PANELS ──────────────────────────────────────────────────────────────── */
+.panel {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 18px 20px;
+  box-shadow: 0 1px 4px var(--shadow);
+}
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.panel-title {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text);
+}
+.chart-wrap {
+  position: relative;
+  width: 100%;
+}
+
+/* ── LEGEND ──────────────────────────────────────────────────────────────── */
+.legend {
+  display: flex;
+  gap: 14px;
+  font-size: 11px;
+  letter-spacing: 1px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--muted);
+}
+.legend-dot {
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ── EV TOGGLE ───────────────────────────────────────────────────────────── */
+.ev-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  letter-spacing: 1px;
+  color: var(--muted);
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: 'Share Tech Mono', monospace;
+  user-select: none;
+}
+.ev-toggle:hover { border-color: var(--ev); color: var(--ev); }
+.ev-toggle.active { border-color: var(--ev); color: var(--ev); background: var(--bg2); }
+.ev-toggle .ev-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--ev);
+  opacity: 0.4;
+  transition: opacity 0.15s;
+}
+.ev-toggle.active .ev-dot { opacity: 1; }
+
+/* ── ERROR BAR (monthly coverage) ────────────────────────────────────────── */
+.month-bar-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.month-error-bar {
+  position: absolute;
+  width: 0;
+  border-left: 1px solid var(--text);
+  opacity: 0.45;
+  top: 2px;
+  bottom: 2px;
+  transform: translateX(-50%);
+}
+.month-error-cap {
+  position: absolute;
+  height: 1px;
+  background: var(--text);
+  opacity: 0.35;
+  border-radius: 0;
+  transform: translateX(-50%);
+  width: 5px;
+}
+
+/* ── MONTHLY BARS ────────────────────────────────────────────────────────── */
+.monthly-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+}
+.month-row {
+  display: grid;
+  grid-template-columns: 36px 1fr 52px;
+  align-items: center;
+  gap: 8px;
+}
+.month-row .month-pct { font-size: 11px; }
+.month-name { color: var(--muted); }
+.month-bar-track {
+  background: var(--bg3);
+  border-radius: 2px;
+  height: 13px;
+  position: relative;
+  overflow: hidden;
+}
+.month-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.5s ease;
+}
+.month-pct { text-align: right; color: var(--text); min-width: 46px; }
+
+/* ── SCATTER + TREND ROW ─────────────────────────────────────────────────── */
+.scatter-trend-row {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: 16px;
+  align-items: start;
+}
+.scatter-wrap { /* kept for legacy */ }
+@media (max-width: 900px) {
+  .scatter-trend-row { grid-template-columns: 1fr; }
+}
+
+/* ── TWO-COL LAYOUT (monthly + yoy side by side on wide screens) ─────────── */
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+/* ── MODAL ───────────────────────────────────────────────────────────────── */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 28px 28px 24px;
+  width: 100%;
+  max-width: 460px;
+  margin: 16px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+}
+.modal h2 {
+  font-size: 15px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 20px;
+  color: var(--prod);
+}
+.form-group {
+  margin-bottom: 14px;
+}
+.form-label {
+  display: block;
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 5px;
+}
+.form-label span {
+  color: var(--muted);
+  font-size: 10px;
+  letter-spacing: 1px;
+}
+.file-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+.file-input-wrap:hover { border-color: var(--prod); }
+.file-input-wrap.loaded { border-color: var(--surplus); }
+.file-input-wrap input[type=file] { display: none; }
+.file-name {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  color: var(--muted);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.file-input-wrap.loaded .file-name { color: var(--surplus); }
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+  justify-content: flex-end;
+}
+.btn {
+  padding: 8px 18px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 13px;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btn-primary {
+  background: var(--prod);
+  border-color: var(--prod);
+  color: #000;
+  font-weight: 600;
+}
+.btn-primary:hover { opacity: 0.88; }
+.btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn-ghost {
+  background: transparent;
+  color: var(--muted);
+}
+.btn-ghost:hover { color: var(--text); border-color: var(--text); }
+.import-status {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  margin-top: 10px;
+  min-height: 16px;
+  color: var(--muted);
+}
+.import-status.ok  { color: var(--surplus); }
+.import-status.err { color: var(--deficit); }
+
+/* ── EMPTY STATE ─────────────────────────────────────────────────────────── */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+  color: var(--muted);
+  text-align: center;
+  gap: 12px;
+}
+.empty-state .icon { font-size: 44px; opacity: 0.3; }
+.empty-state h2 { font-size: 17px; letter-spacing: 3px; text-transform: uppercase; }
+.empty-state p { font-size: 13px; max-width: 360px; line-height: 1.6; }
+
+/* ── CAROUSEL (mobile swipe) ─────────────────────────────────────────────── */
+.carousel-track {
+  display: flex;
+  overflow-x: scroll;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  gap: 0;
+  width: 100%;
+}
+.carousel-track::-webkit-scrollbar { display: none; }
+
+.carousel-page {
+  flex: 0 0 100%;
+  scroll-snap-align: start;
+  overflow-y: auto;
+  padding: 12px;
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+.carousel-dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 0 6px;
+  flex-wrap: wrap;
+}
+.carousel-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--border);
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.2s, transform 0.2s;
+  flex-shrink: 0;
+}
+.carousel-dot.active {
+  background: var(--prod);
+  transform: scale(1.3);
+}
+
+/* ── RESPONSIVE ──────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  header { padding: 10px 14px; flex-wrap: wrap; gap: 8px; }
+  .header-right { gap: 6px; }
+  .import-btn { font-size: 11px; padding: 6px 9px; }
+  .theme-btn  { padding: 6px 9px; font-size: 14px; }
+  main { padding: 0; gap: 0; }          /* carousel handles layout */
+  .carousel-page { padding: 12px; }
+  .cards-grid { grid-template-columns: repeat(2, 1fr); }
+  .scatter-trend-row { grid-template-columns: 1fr; }
+  .chart-wrap { height: 240px !important; }
+  .panel { padding: 12px 14px; }
+  .section-label { font-size: 10px; letter-spacing: 2px; }
+  .status-bar { font-size: 10px; gap: 12px; padding: 4px 14px; }
+  .date-range-bar { padding: 5px 14px; }
+}
+@media (max-width: 540px) {
+  .cards-grid { grid-template-columns: repeat(2, 1fr); }
+  .two-col { grid-template-columns: 1fr; }  /* no pairing on mobile */
+  .chart-wrap { height: 220px !important; }
+}
+@media (max-width: 480px) {
+  .cards-grid { grid-template-columns: 1fr; }
+  .theme-switcher { display: none; }
+  .status-bar { flex-wrap: wrap; }
+}
+/* ── SETTINGS PAGE ──────────────────────────────────────────────────────── */
+.settings-page { padding: 24px; }
+.settings-back { display: flex; align-items: center; gap: 8px; background: transparent; border: none; color: var(--muted); font-family: 'Barlow Condensed', sans-serif; font-size: 14px; letter-spacing: 1px; cursor: pointer; padding: 0 0 20px; transition: color 0.2s; }
+.settings-back:hover { color: var(--prod); }
+.settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+.settings-grid-full { grid-column: 1 / -1; }
+.settings-section { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 20px 24px; height: 100%; box-sizing: border-box; }
+.settings-section-title { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: var(--prod); margin-bottom: 16px; font-family: 'Share Tech Mono', monospace; }
+.settings-row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--border); }
+.settings-row:last-child { border-bottom: none; padding-bottom: 0; }
+.settings-row-label { color: var(--muted); letter-spacing: 1px; font-size: 13px; text-transform: uppercase; white-space: nowrap; flex-shrink: 0; }
+.settings-row-value { color: var(--text); font-family: 'Share Tech Mono', monospace; font-size: 14px; text-align: right; word-break: break-all; }
+.settings-row-value.ok  { color: var(--surplus); }
+.settings-row-value.err { color: var(--deficit); }
+.settings-actions { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+.diag-result { margin-top: 12px; font-family: 'Share Tech Mono', monospace; font-size: 13px; color: var(--muted); line-height: 2; display: none; }
+.diag-result.visible { display: block; }
+@media (max-width: 700px) { .settings-grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<!-- ── HEADER ──────────────────────────────────────────────────────────────── -->
+<header>
+  <div class="logo">
+    <span class="logo-icon">⚡</span>
+    <div>
+      <div class="logo-text">Energy Monitor</div>
+      <div class="logo-sub">SOLAR · CONSUMPTION · EV · NET</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="theme-switcher">
+      <button class="theme-btn" data-mode="light" title="Light mode">☀</button>
+      <button class="theme-btn" data-mode="system" title="Auto">⊙</button>
+      <button class="theme-btn" data-mode="dark" title="Dark mode">☾</button>
+    </div>
+    <button class="import-btn" id="open-import">⬆ IMPORT DATA</button>
+    <button class="import-btn" id="open-dashboard">⌂ DASHBOARD</button>
+    <button class="import-btn" id="open-settings" style="position:relative;">⚙ SETTINGS<span id="conflict-badge" style="display:none;position:absolute;top:-4px;right:-4px;background:var(--deficit);color:#fff;border-radius:50%;min-width:16px;height:16px;font-size:9px;align-items:center;justify-content:center;font-family:monospace;padding:0 3px;" aria-label="unreviewed conflicts"></span></button>
+  </div>
+</header>
+
+<!-- ── STATUS BAR ──────────────────────────────────────────────────────────── -->
+<div class="status-bar">
+  <div>STATUS: <b id="sb-status">AWAITING DATA</b></div>
+  <div>RANGE: <b id="sb-range">—</b></div>
+  <div>RECORDS: <b id="sb-records">—</b></div>
+  <div>LAST IMPORT: <b id="sb-imported">—</b></div>
+  <div style="margin-left:auto;">BE <b id="sb-be">—</b> &nbsp;|&nbsp; FE <b id="sb-fe">—</b></div>
+</div>
+
+<!-- ── MAIN CONTENT ────────────────────────────────────────────────────────── -->
+<main id="main"></main>
+
+<!-- ── IMPORT MODAL ────────────────────────────────────────────────────────── -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <h2>⬆ Import Energy Data</h2>
+
+    <div style="display:flex;gap:8px;margin-bottom:14px;">
+      <button class="btn btn-ghost import-mode-btn active" id="mode-daily" style="flex:1;font-size:11px;letter-spacing:1px;">DAILY CSVs</button>
+      <button class="btn btn-ghost import-mode-btn" id="mode-interval" style="flex:1;font-size:11px;letter-spacing:1px;">15-MIN INTERVAL</button>
+    </div>
+
+    <div id="import-daily-fields">
+      <div class="form-group">
+        <label class="form-label">Production CSV <span>(Energy Produced in Wh)</span></label>
+        <label class="file-input-wrap" id="prod-wrap">
+          <span>📄</span>
+          <span class="file-name" id="prod-name">No file selected</span>
+          <input type="file" id="prod-file" accept=".csv">
+        </label>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Consumption CSV <span>(Energy Consumed in kWh)</span></label>
+        <label class="file-input-wrap" id="cons-wrap">
+          <span>📄</span>
+          <span class="file-name" id="cons-name">No file selected</span>
+          <input type="file" id="cons-file" accept=".csv">
+        </label>
+      </div>
+    </div>
+
+    <div id="import-interval-fields" style="display:none;">
+      <div class="form-group">
+        <label class="form-label">Combined Interval Report <span>(15-min prod + cons + grid)</span></label>
+        <label class="file-input-wrap" id="interval-wrap">
+          <span>📄</span>
+          <span class="file-name" id="interval-name">No file selected</span>
+          <input type="file" id="interval-file" accept=".csv">
+        </label>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">EV Charger CSV <span>(optional — session log)</span></label>
+      <label class="file-input-wrap" id="ev-wrap">
+        <span>📄</span>
+        <span class="file-name" id="ev-name">No file selected</span>
+        <input type="file" id="ev-file" accept=".csv">
+      </label>
+    </div>
+
+    <div class="import-status" id="import-status"></div>
+
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="cancel-import">CANCEL</button>
+      <button class="btn btn-primary" id="do-import" disabled>IMPORT</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── RESTORE MODAL ───────────────────────────────────────────────────────── -->
+<div class="modal-overlay" id="restore-overlay">
+  <div class="modal">
+    <h2>⬆ Restore Database</h2>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:16px;line-height:1.6;">
+      Upload a <code>.db</code> backup file to replace the current database.<br>
+      <span style="color:var(--deficit);">⚠ This will overwrite all current data.</span>
+    </p>
+    <div class="form-group">
+      <label class="form-label">Backup File <span>(.db)</span></label>
+      <label class="file-input-wrap" id="restore-wrap">
+        <span>💾</span>
+        <span class="file-name" id="restore-name">No file selected</span>
+        <input type="file" id="restore-file" accept=".db">
+      </label>
+    </div>
+    <div class="import-status" id="restore-status"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="cancel-restore">CANCEL</button>
+      <button class="btn" id="do-restore" disabled
+        style="background:var(--deficit);border-color:var(--deficit);color:#fff;">RESTORE</button>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+// ── UTILITY FUNCTIONS ────────────────────────────────────────────────────────
+function cssVar(name) {
+  return getComputedStyle(html).getPropertyValue(name).trim();
+}
+
+function chartDefaults() {
+  // Use a softer grid color that works in both light and dark themes
+  // --border in light is #e2e8f0 (too solid), in dark is #252b33 (fine)
+  // We blend it with transparency to make grid lines subtle in all themes
+  const borderHex = cssVar('--border').trim();
+  return {
+    color: cssVar('--muted'),
+    grid:  borderHex,
+    gridSoft: 'rgba(128,128,128,0.15)',  // consistent soft grid for all charts
+  };
+}
+
+function tooltipStyle() {
+  return {
+    backgroundColor: cssVar('--bg3'),
+    borderColor:     cssVar('--border'),
+    borderWidth: 1,
+    titleColor:  cssVar('--muted'),
+    bodyColor:   cssVar('--text'),
+    padding: 10,
+  };
+}
+
+// ── THEME ─────────────────────────────────────────────────────────────────────
+const html = document.documentElement;
+const THEME_KEY = 'energy_theme';
+let systemDark = window.matchMedia('(prefers-color-scheme: dark)');
+
+function applyTheme(mode) {
+  const resolved = mode === 'system' ? (systemDark.matches ? 'dark' : 'light') : mode;
+  html.setAttribute('data-theme', resolved);
+  document.querySelectorAll('.theme-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.mode === mode);
+  });
+  // Refresh charts if rendered
+  if (window._charts) {
+    Object.values(window._charts).forEach(c => {
+      if (!c) return;
+      // Update zero-line dataset color (trend chart)
+      if (c.data && c.data.datasets) {
+        c.data.datasets.forEach(ds => {
+          if (ds.label === 'Zero') ds.borderColor = cssVar('--muted');
+        });
+      }
+      updateChartTheme(c);
+      c.update();
+    });
+  }
+}
+
+function updateChartTheme(chart) {
+  if (!chart || !chart.options) return;
+  const muted  = getComputedStyle(html).getPropertyValue('--muted').trim();
+  const border = getComputedStyle(html).getPropertyValue('--border').trim();
+  if (chart.options.scales) {
+    Object.values(chart.options.scales).forEach(axis => {
+      if (!axis) return;
+      if (axis.ticks)  axis.ticks.color  = muted;
+      if (axis.grid)   axis.grid.color   = border;
+      if (axis.border) axis.border.color = border;
+    });
+  }
+  // Re-apply annotation zero line color if present (trend chart)
+  if (chart.options.plugins?.annotation?.annotations?.zeroLine) {
+    chart.options.plugins.annotation.annotations.zeroLine.borderColor = muted;
+  }
+}
+
+document.querySelectorAll('.theme-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const mode = btn.dataset.mode;
+    localStorage.setItem(THEME_KEY, mode);
+    applyTheme(mode);
+  });
+});
+
+systemDark.addEventListener('change', () => {
+  if ((localStorage.getItem(THEME_KEY) || 'system') === 'system') applyTheme('system');
+});
+
+applyTheme(localStorage.getItem(THEME_KEY) || 'system');
+
+// ── GLOBAL DATA FLAGS ───────────────────────────────────────────────────────────
+window._hasInterval = false;
+window._hasEV       = false;
+
+// ── DASHBOARD PREFS (S-04) ───────────────────────────────────────────────────
+const PREFS_KEY = 'energy_dashboard_prefs';
+const SECTIONS  = [
+  { key: 'cards',    label: 'Stat Cards',                    half: false },
+  { key: 'scatter',  label: 'Prod vs Cons Scatter',          half: false },
+  { key: 'trend',    label: 'Net Energy Trend (30d)',         half: true  },
+  { key: 'dow',      label: 'Day-of-Week Consumption',       half: true  },
+  { key: 'myoy',     label: 'Monthly + Year-over-Year',      half: false },
+  { key: 'solar',    label: 'Solar Fingerprint',             half: false, requiresInterval: true },
+  { key: 'interval', label: 'Interval Analytics (15-min)',   half: false, requiresInterval: true },
+];
+const SECTION_MAP = Object.fromEntries(SECTIONS.map(s => [s.key, s]));
+
+function _loadPrefs() {
+  try { return JSON.parse(localStorage.getItem(PREFS_KEY)) || {}; } catch(_) { return {}; }
+}
+
+function _sectionVisible(key) {
+  const p = _loadPrefs();
+  return p[key] !== false;  // default true if not set
+}
+
+function _getSectionOrder() {
+  const p = _loadPrefs();
+  let saved = p.order;
+  const defaultOrder = SECTIONS.map(s => s.key);
+  if (!saved || !Array.isArray(saved)) return defaultOrder;
+  // Migrate old monthly/yoy keys to myoy
+  const hasMYoY = saved.includes('myoy');
+  if (!hasMYoY) {
+    const idx = saved.indexOf('monthly');
+    if (idx >= 0) { saved = [...saved]; saved.splice(idx, 1, 'myoy'); }
+    saved = saved.filter(k => k !== 'yoy');
+  }
+  // Merge: saved order + any new keys not yet in saved
+  const known = new Set(saved);
+  const extra = defaultOrder.filter(k => !known.has(k));
+  return [...saved.filter(k => SECTION_MAP[k]), ...extra];
+}
+
+function _savePrefs(visMap, order) {
+  const p = _loadPrefs();
+  Object.assign(p, visMap);
+  if (order) p.order = order;
+  localStorage.setItem(PREFS_KEY, JSON.stringify(p));
+}
+
+// ── CHART REGISTRY ────────────────────────────────────────────────────────────
+window._charts = { scatter: null, monthly: null, yoy: null, trend: null };
+
+// ── DATE RANGE STATE ──────────────────────────────────────────────────────────
+let _drFrom = null;   // ISO string or null (null = use API default)
+let _drTo   = null;
+let _drPreset = 'all';
+
+function _drBuildQuery() {
+  const params = [];
+  if (_drFrom) params.push(`from_date=${_drFrom}`);
+  if (_drTo)   params.push(`to_date=${_drTo}`);
+  return params.length ? '?' + params.join('&') : '';
+}
+
+function _drSetPreset(preset) {
+  _drPreset = preset;
+  const today = new Date();
+  const fmt   = d => d.toISOString().slice(0,10);
+  const fromInput = document.getElementById('dr-from');
+  const toInput   = document.getElementById('dr-to');
+  document.querySelectorAll('.date-preset').forEach(b => b.classList.remove('active'));
+  const btn = document.querySelector(`[data-preset="${preset}"]`);
+  if (btn) btn.classList.add('active');
+
+  if (preset === 'all') {
+    _drFrom = null; _drTo = null;
+    if (fromInput) fromInput.value = '';
+    if (toInput)   toInput.value   = '';
+  } else if (preset === '30d') {
+    const d = new Date(today); d.setDate(d.getDate()-30);
+    _drFrom = fmt(d); _drTo = fmt(today);
+    if (fromInput) fromInput.value = _drFrom;
+    if (toInput)   toInput.value   = _drTo;
+  } else if (preset === '90d') {
+    const d = new Date(today); d.setDate(d.getDate()-90);
+    _drFrom = fmt(d); _drTo = fmt(today);
+    if (fromInput) fromInput.value = _drFrom;
+    if (toInput)   toInput.value   = _drTo;
+  } else if (preset === '1y') {
+    const d = new Date(today); d.setFullYear(d.getFullYear()-1);
+    _drFrom = fmt(d); _drTo = fmt(today);
+    if (fromInput) fromInput.value = _drFrom;
+    if (toInput)   toInput.value   = _drTo;
+  } else if (preset === 'ytd') {
+    _drFrom = fmt(today).slice(0,4) + '-01-01'; _drTo = fmt(today);
+    if (fromInput) fromInput.value = _drFrom;
+    if (toInput)   toInput.value   = _drTo;
+  }
+}
+
+// Date range controls wired inside renderCards
+
+// ── CHART HELPERS ─────────────────────────────────────────────────────────────
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const MONTH_DOYS = [1,32,60,91,121,152,182,213,244,274,305,335];
+
+
+
+// ── MODAL ─────────────────────────────────────────────────────────────────────
+const overlay    = document.getElementById('modal-overlay');
+const doImportBtn = document.getElementById('do-import');
+const statusEl   = document.getElementById('import-status');
+
+document.getElementById('open-import').addEventListener('click', () => {
+  overlay.classList.add('open');
+  statusEl.textContent = '';
+  statusEl.className = 'import-status';
+});
+document.getElementById('cancel-import').addEventListener('click', () => {
+  overlay.classList.remove('open');
+  resetImportModal();
+});
+overlay.addEventListener('click', e => { if (e.target === overlay) { overlay.classList.remove('open'); resetImportModal(); } });
+
+// ── RESTORE MODAL ─────────────────────────────────────────────────────────────
+const restoreOverlay  = document.getElementById('restore-overlay');
+const doRestoreBtn    = document.getElementById('do-restore');
+const restoreStatusEl = document.getElementById('restore-status');
+
+
+document.getElementById('cancel-restore').addEventListener('click', () => {
+  restoreOverlay.classList.remove('open');
+});
+restoreOverlay.addEventListener('click', e => { if (e.target === restoreOverlay) restoreOverlay.classList.remove('open'); });
+
+const restoreInput = document.getElementById('restore-file');
+restoreInput.addEventListener('change', () => {
+  const f = restoreInput.files[0];
+  document.getElementById('restore-name').textContent = f ? f.name : 'No file selected';
+  document.getElementById('restore-wrap').classList.toggle('loaded', !!f);
+  doRestoreBtn.disabled = !f;
+});
+
+doRestoreBtn.addEventListener('click', async () => {
+  const f = restoreInput.files[0];
+  if (!f) return;
+  if (!confirm('This will overwrite the current database with the selected backup. Are you sure?')) return;
+
+  const fd = new FormData();
+  fd.append('db_file', f);
+
+  doRestoreBtn.disabled = true;
+  restoreStatusEl.className = 'import-status';
+  restoreStatusEl.textContent = 'RESTORING…';
+
+  try {
+    const res = await fetch('/api/restore', { method: 'POST', body: fd });
+    const parsed = await res.json().catch(() => null);
+    if (res.ok && parsed?.success) {
+      restoreStatusEl.textContent = '✓ Restore successful — reloading…';
+      restoreStatusEl.className = 'import-status ok';
+      setTimeout(() => {
+        restoreOverlay.classList.remove('open');
+        loadDashboard();
+      }, 1200);
+    } else {
+      const detail = parsed?.detail || 'Restore failed';
+      restoreStatusEl.textContent = `✗ ${detail}`;
+      restoreStatusEl.className = 'import-status err';
+      doRestoreBtn.disabled = false;
+    }
+  } catch (e) {
+    restoreStatusEl.textContent = '✗ Network error — is the server running?';
+    restoreStatusEl.className = 'import-status err';
+    doRestoreBtn.disabled = false;
+  }
+});
+
+function wireFileInput(inputId, nameId, wrapId) {
+  const input = document.getElementById(inputId);
+  const name  = document.getElementById(nameId);
+  const wrap  = document.getElementById(wrapId);
+  input.addEventListener('change', () => {
+    if (input.files[0]) {
+      name.textContent = input.files[0].name;
+      wrap.classList.add('loaded');
+    } else {
+      name.textContent = 'No file selected';
+      wrap.classList.remove('loaded');
+    }
+    checkImportReady();
+  });
+}
+
+wireFileInput('prod-file',     'prod-name',     'prod-wrap');
+wireFileInput('cons-file',     'cons-name',     'cons-wrap');
+wireFileInput('interval-file', 'interval-name', 'interval-wrap');
+wireFileInput('ev-file',       'ev-name',       'ev-wrap');
+
+let _importMode = 'daily';  // 'daily' | 'interval'
+
+function resetImportModal() {
+  [['prod-file','prod-name','prod-wrap'],
+   ['cons-file','cons-name','cons-wrap'],
+   ['interval-file','interval-name','interval-wrap'],
+   ['ev-file',  'ev-name',  'ev-wrap']].forEach(([inputId, nameId, wrapId]) => {
+    const input = document.getElementById(inputId);
+    const name  = document.getElementById(nameId);
+    const wrap  = document.getElementById(wrapId);
+    if (!input) return;
+    input.value = '';
+    name.textContent = 'No file selected';
+    wrap.classList.remove('loaded');
+  });
+  doImportBtn.disabled = true;
+  statusEl.textContent = '';
+  statusEl.className = 'import-status';
+}
+
+// Mode toggle wiring
+document.getElementById('mode-daily').addEventListener('click', () => {
+  _importMode = 'daily';
+  document.getElementById('import-daily-fields').style.display = '';
+  document.getElementById('import-interval-fields').style.display = 'none';
+  document.getElementById('mode-daily').classList.add('active');
+  document.getElementById('mode-interval').classList.remove('active');
+  checkImportReady();
+});
+document.getElementById('mode-interval').addEventListener('click', () => {
+  _importMode = 'interval';
+  document.getElementById('import-daily-fields').style.display = 'none';
+  document.getElementById('import-interval-fields').style.display = '';
+  document.getElementById('mode-daily').classList.remove('active');
+  document.getElementById('mode-interval').classList.add('active');
+  checkImportReady();
+});
+
+function checkImportReady() {
+  const prod     = document.getElementById('prod-file').files[0];
+  const cons     = document.getElementById('cons-file').files[0];
+  const ev       = document.getElementById('ev-file').files[0];
+  const interval = document.getElementById('interval-file').files[0];
+  if (_importMode === 'interval') {
+    doImportBtn.disabled = !(interval || ev);
+  } else {
+    doImportBtn.disabled = !(prod || cons || ev);
+  }
+}
+
+doImportBtn.addEventListener('click', async () => {
+  const prod = document.getElementById('prod-file').files[0];
+  const cons = document.getElementById('cons-file').files[0];
+  const ev   = document.getElementById('ev-file').files[0];
+
+  const interval = document.getElementById('interval-file').files[0];
+  const fd = new FormData();
+  if (_importMode === 'interval') {
+    if (interval) fd.append('interval_file', interval);
+  } else {
+    if (prod) fd.append('prod_file', prod);
+    if (cons) fd.append('cons_file', cons);
+  }
+  if (ev) fd.append('ev_file', ev);
+
+  doImportBtn.disabled = true;
+  statusEl.className = 'import-status';
+  statusEl.textContent = 'UPLOADING…';
+
+  try {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', '/api/import');
+    xhr.onload = () => {
+      // Safely parse — server may return plain text on early crashes
+      let parsed = null;
+      try { parsed = JSON.parse(xhr.responseText); } catch (_) {}
+
+      if (xhr.status === 200 && parsed) {
+        const ev  = parsed.ev_included ? ' (EV included)' : '';
+        const msg = `✓ ${parsed.inserted} new, ${parsed.updated} updated, ${parsed.skipped} skipped${ev}`;
+        statusEl.textContent = msg;
+        statusEl.className = 'import-status ok';
+        setTimeout(() => {
+          overlay.classList.remove('open');
+          resetImportModal();
+          loadDashboard();
+        }, 1200);
+      } else {
+        const detail = parsed?.detail || xhr.responseText || 'Import failed';
+        statusEl.textContent = `✗ ${detail}`;
+        statusEl.className = 'import-status err';
+        doImportBtn.disabled = false;
+      }
+    };
+    xhr.onerror = () => {
+      statusEl.textContent = '✗ Network error — is the server running?';
+      statusEl.className = 'import-status err';
+      doImportBtn.disabled = false;
+    };
+    xhr.send(fd);
+  } catch (e) {
+    statusEl.textContent = '✗ ' + e.message;
+    statusEl.className = 'import-status err';
+    doImportBtn.disabled = false;
+  }
+});
+
+// ── DASHBOARD ─────────────────────────────────────────────────────────────────
+async function loadDashboard() {
+  // Always fetch version — shows even when DB is empty
+  try {
+    const vRes = await fetch('/api/version');
+    if (vRes.ok) {
+      const v = await vRes.json();
+      document.getElementById('sb-be').textContent = v.be;
+      document.getElementById('sb-fe').textContent = v.fe;
+    }
+  } catch(_) {}
+
+  try {
+    const drQSum = _drFrom ? `?from_date=${_drFrom}&to_date=${_drTo || ''}`.replace(/&to_date=$/, '') : '';
+    const [summaryRes, dailyRes, monthlyRes] = await Promise.all([
+      fetch(`/api/summary${drQSum}`),
+      fetch('/api/daily'),
+      fetch('/api/monthly'),
+    ]);
+
+    // If any API route returned non-2xx, log the status and show empty state
+    for (const [name, res] of [['summary', summaryRes], ['daily', dailyRes], ['monthly', monthlyRes]]) {
+      if (!res.ok) {
+        const body = await res.text();
+        console.error(`/api/${name} returned ${res.status}:`, body);
+        renderEmpty();
+        return;
+      }
+    }
+
+    const [summary, daily, monthly] = await Promise.all([
+      summaryRes.json(),
+      dailyRes.json(),
+      monthlyRes.json(),
+    ]);
+
+    // Empty database — show prompt to import, no warning needed
+    if (!daily || daily.length === 0 || !summary || summary.total_days === 0) {
+      renderEmpty();
+      return;
+    }
+
+    const hasEV = (summary.total_ev || 0) > 0 || (summary.total_ev_sessions || 0) > 0;
+    updateStatusBar(summary, daily);
+    updateConflictBadge();
+
+    const hasInterval = daily.some(r => r.data_source === 'interval');
+    window._hasInterval = hasInterval;
+    window._hasEV       = hasEV;
+
+    // Render sections in user-defined order, pairing adjacent half-width sections
+    const orderedKeys = _getSectionOrder();
+    const visibleSecs = orderedKeys.filter(k => {
+      if (!_sectionVisible(k)) return false;
+      if (SECTION_MAP[k]?.requiresInterval && !hasInterval) return false;
+      return true;
+    });
+
+    // Each render fn appends directly to main; after render we move half-width
+    // panels into two-col pairs based on order
+    const _renderFns = {
+      cards:    () => renderCards(summary, hasEV),
+      scatter:  () => renderScatter(daily, hasEV),
+      trend:    () => renderTrend(daily),
+      myoy:     () => renderMonthlyAndYoY(monthly, daily, hasEV),
+      dow:      () => renderDOW(hasEV),
+      solar:    () => renderSolarFingerprint(daily),
+      interval: () => renderIntervalDashboards(hasEV),
+    };
+
+    const mainEl = document.getElementById('main');
+
+    // Render each visible section, then post-process to pair half-width sections
+    // We snapshot main.children before each render to find new nodes added
+    // Must await async render functions so nodes are in DOM before tagging
+    for (const key of visibleSecs) {
+      const before = mainEl.children.length;
+      await (_renderFns[key]?.());
+      // Tag newly added root nodes with the section key
+      for (let j = before; j < mainEl.children.length; j++) {
+        mainEl.children[j].dataset.sectionKey = key;
+      }
+    }
+
+    // ── Layout: desktop vs tablet vs mobile ─────────────────────────────────
+    const W = window.innerWidth;
+    const isMobile = W <= 540;
+    const isTablet = W > 540 && W <= 768;
+    const isDesktop = W > 768;
+
+    const allNodes = Array.from(mainEl.children);
+
+    if (isDesktop) {
+      // Desktop: pair adjacent half-width sections into two-col rows
+      let pi = 0;
+      while (true) {
+        const children = Array.from(mainEl.children);
+        if (pi >= children.length) break;
+        const node    = children[pi];
+        const nodeKey = node.dataset.sectionKey;
+        const nodeSec = SECTION_MAP[nodeKey];
+        if (!nodeSec) { pi++; continue; }
+        let ni = pi + 1;
+        while (ni < children.length && !SECTION_MAP[children[ni].dataset.sectionKey]) ni++;
+        const nextNode = children[ni];
+        const nextKey  = nextNode?.dataset.sectionKey;
+        const nextSec  = SECTION_MAP[nextKey];
+        if (nodeSec.half && nextSec?.half) {
+          const row = document.createElement('div');
+          row.className = 'two-col';
+          row.dataset.pairRow = nodeKey + '+' + nextKey;
+          mainEl.insertBefore(row, node);
+          row.appendChild(node);
+          row.appendChild(nextNode);
+          continue;
+        }
+        pi++;
+      }
+    } else {
+      // Mobile/Tablet: build carousel
+      // Collect pages: on tablet pair halves, on mobile all separate
+      const pages = [];
+      let pi = 0;
+      while (pi < allNodes.length) {
+        const node    = allNodes[pi];
+        const nodeKey = node.dataset.sectionKey;
+        const nodeSec = SECTION_MAP[nodeKey];
+        const nextNode = allNodes[pi + 1];
+        const nextKey  = nextNode?.dataset.sectionKey;
+        const nextSec  = SECTION_MAP[nextKey];
+
+        if (isTablet && nodeSec?.half && nextSec?.half) {
+          // Pair on tablet
+          pages.push([node, nextNode]);
+          pi += 2;
+        } else {
+          pages.push([node]);
+          pi++;
+        }
+      }
+
+      // Build carousel DOM
+      const track = document.createElement('div');
+      track.className = 'carousel-track';
+      track.id = 'carousel-track';
+
+      pages.forEach((pageNodes, idx) => {
+        const page = document.createElement('div');
+        page.className = 'carousel-page';
+        page.dataset.pageIdx = idx;
+        if (pageNodes.length === 2) {
+          // Paired — wrap in two-col
+          const pair = document.createElement('div');
+          pair.className = 'two-col';
+          pair.style.gridTemplateColumns = '1fr 1fr';
+          pageNodes.forEach(n => pair.appendChild(n));
+          page.appendChild(pair);
+        } else {
+          page.appendChild(pageNodes[0]);
+        }
+        track.appendChild(page);
+      });
+
+      mainEl.appendChild(track);
+
+      // Dot indicators
+      const dotsEl = document.createElement('div');
+      dotsEl.className = 'carousel-dots';
+      dotsEl.id = 'carousel-dots';
+      pages.forEach((_, idx) => {
+        const dot = document.createElement('button');
+        dot.className = 'carousel-dot' + (idx === 0 ? ' active' : '');
+        dot.dataset.page = idx;
+        dot.setAttribute('aria-label', 'Page ' + (idx + 1));
+        dot.addEventListener('click', () => {
+          const pg = track.children[idx];
+          if (pg) track.scrollTo({ left: pg.offsetLeft, behavior: 'smooth' });
+        });
+        dotsEl.appendChild(dot);
+      });
+      mainEl.appendChild(dotsEl);
+
+      // Sync dots on scroll
+      const dots = dotsEl.querySelectorAll('.carousel-dot');
+      track.addEventListener('scroll', () => {
+        const pageW = track.clientWidth;
+        const cur   = Math.round(track.scrollLeft / pageW);
+        dots.forEach((d, i) => d.classList.toggle('active', i === cur));
+      }, { passive: true });
+    }
+  } catch (e) {
+    console.error('Dashboard load failed:', e);
+    // Surface error visibly so we can diagnose in production
+    const main = document.getElementById('main');
+    if (main) main.innerHTML = `
+      <div class="empty-state">
+        <div class="icon">⚠</div>
+        <h2>Render Error</h2>
+        <p style="font-family:monospace;font-size:11px;color:var(--deficit);max-width:600px;word-break:break-all;">
+          ${e.message}<br><br>${(e.stack||'').split('\n').slice(0,4).join('<br>')}
+        </p>
+      </div>`;
+  }
+}
+
+// ── ONBOARDING WIZARD ────────────────────────────────────────────────────────
+const _WIZ_STEPS = ['welcome','data_type','ev','battery','dates','done'];
+let _wizData = {};
+function _wizSave(key, val) { _wizData[key] = val; }
+
+function renderEmpty() {
+  fetch('/api/setup').then(r => r.json()).then(s => {
+    if (s.setup_complete) { _renderEmptyPlain(); } else { _renderWizard('welcome'); }
+  }).catch(() => _renderEmptyPlain());
+}
+
+function _renderEmptyPlain() {
+  document.getElementById('main').innerHTML = `
+    <div class="empty-state">
+      <div class="icon">☀</div>
+      <h2>No Data Yet</h2>
+      <p>Click <strong>IMPORT DATA</strong> in the header to upload your CSV files.</p>
+      <p style="margin-top:12px;font-size:13px;color:var(--muted)">Need to change your setup? Visit <strong>SETTINGS</strong> in the header.</p>
+    </div>`;
+}
+
+function _wizStyle() {
+  return `<style>
+    .wiz-wrap{max-width:580px;margin:48px auto;padding:0 16px}
+    .wiz-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:32px 36px}
+    .wiz-step{font-size:11px;letter-spacing:2px;color:var(--muted);margin-bottom:8px;text-transform:uppercase}
+    .wiz-title{font-size:22px;font-weight:700;color:var(--text);margin-bottom:8px}
+    .wiz-sub{font-size:14px;color:var(--muted);margin-bottom:28px;line-height:1.5}
+    .wiz-opts{display:flex;flex-direction:column;gap:10px;margin-bottom:28px}
+    .wiz-opt{display:flex;align-items:flex-start;gap:14px;padding:14px 16px;background:var(--bg3);border:1px solid var(--border);border-radius:7px;cursor:pointer;transition:border-color .15s}
+    .wiz-opt:hover,.wiz-opt.selected{border-color:var(--prod)}
+    .wiz-opt-icon{font-size:22px;flex-shrink:0;padding-top:1px}
+    .wiz-opt-label{font-size:14px;font-weight:600;color:var(--text)}
+    .wiz-opt-desc{font-size:12px;color:var(--muted);margin-top:3px;line-height:1.5}
+    .wiz-badge{display:inline-block;font-size:10px;letter-spacing:1px;background:var(--bg3);border:1px solid var(--border);border-radius:3px;padding:2px 7px;color:var(--muted);vertical-align:middle;margin-left:6px}
+    .wiz-pending{display:inline-block;font-size:10px;background:#78350f22;color:#f59e0b;border:1px solid #f59e0b44;border-radius:3px;padding:1px 7px;letter-spacing:1px;vertical-align:middle}
+    .wiz-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:4px}
+    .wiz-btn{padding:9px 22px;border-radius:5px;font-size:13px;font-weight:600;letter-spacing:1px;cursor:pointer;border:none}
+    .wiz-btn-primary{background:var(--prod);color:#000}
+    .wiz-btn-secondary{background:var(--bg3);color:var(--text);border:1px solid var(--border)}
+    .wiz-btn:disabled{opacity:.4;cursor:not-allowed}
+    .wiz-field{margin-bottom:18px}
+    .wiz-label{font-size:12px;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin-bottom:6px}
+    .wiz-input{width:100%;padding:9px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:5px;color:var(--text);font-size:14px;box-sizing:border-box}
+    .wiz-hint{font-size:11px;color:var(--muted);margin-top:4px;line-height:1.4}
+    .wiz-note{background:var(--bg3);border-left:3px solid var(--prod);border-radius:0 5px 5px 0;padding:10px 14px;font-size:12px;color:var(--muted);margin-bottom:20px;line-height:1.5}
+    .wiz-dots{display:flex;gap:6px;align-items:center;margin-bottom:24px}
+    .wiz-dot{width:7px;height:7px;border-radius:50%;background:var(--border);transition:background .2s}
+    .wiz-dot.active{background:var(--prod)}
+  </style>`;
+}
+
+function _wizDots(cur) {
+  return '<div class="wiz-dots">' +
+    ['welcome','data_type','ev','battery','dates'].map(s =>
+      '<div class="wiz-dot' + (s===cur?' active':'') + '"></div>'
+    ).join('') + '</div>';
+}
+
+function _renderWizard(step) {
+  const main = document.getElementById('main');
+  let h = _wizStyle() + '<div class="wiz-wrap"><div class="wiz-card">';
+
+  if (step === 'welcome') {
+    h += _wizDots(step) + `
+      <div class="wiz-title">Welcome to Wattwise</div>
+      <div class="wiz-sub">Let's take two minutes to configure your system so the dashboard shows accurate data. You can change any of these settings later in Settings.</div>
+      <div class="wiz-note">This dashboard visualises solar production, household consumption, and optionally EV charging — imported from CSV exports from your monitoring system.</div>
+      <div class="wiz-actions"><button class="wiz-btn wiz-btn-primary" id="wiz-next">GET STARTED →</button></div>`;
+  }
+
+  else if (step === 'data_type') {
+    h += _wizDots(step) + `
+      <div class="wiz-step">Step 1 of 4</div>
+      <div class="wiz-title">What type of data are you importing?</div>
+      <div class="wiz-sub">Your monitoring system may export daily summaries or 15-minute interval data. Interval data unlocks additional charts.</div>
+      <div class="wiz-opts">
+        <div class="wiz-opt` + (_wizData.data_type==='interval'?' selected':'') + `" data-val="interval" id="opt-interval">
+          <div class="wiz-opt-icon">⚡</div>
+          <div class="wiz-opt-text">
+            <div class="wiz-opt-label">15-Minute Interval Data <span class="wiz-badge">RECOMMENDED</span></div>
+            <div class="wiz-opt-desc">A single combined CSV with columns: <em>Date/Time, Energy Produced (Wh), Energy Consumed (Wh), Exported to Grid (Wh), Imported from Grid (Wh)</em>. One row per 15-min slot. Unlocks hourly charts, grid dependency, and solar fingerprint views.</div>
+          </div>
+        </div>
+        <div class="wiz-opt` + (_wizData.data_type==='daily'?' selected':'') + `" data-val="daily" id="opt-daily">
+          <div class="wiz-opt-icon">📅</div>
+          <div class="wiz-opt-text">
+            <div class="wiz-opt-label">Daily Summary CSVs</div>
+            <div class="wiz-opt-desc">Separate daily files — production CSV (<em>Date/Time, Energy Produced (Wh)</em>) and consumption CSV (<em>Date/Time, Energy Consumed (kWh)</em>). One row per day.</div>
+          </div>
+        </div>
+      </div>
+      <div class="wiz-actions">
+        <button class="wiz-btn wiz-btn-secondary" id="wiz-back">← BACK</button>
+        <button class="wiz-btn wiz-btn-primary" id="wiz-next" ` + (_wizData.data_type?'':'disabled') + `>NEXT →</button>
+      </div>`;
+  }
+
+  else if (step === 'ev') {
+    h += _wizDots(step) + `
+      <div class="wiz-step">Step 2 of 4</div>
+      <div class="wiz-title">Do you want to track EV charging?</div>
+      <div class="wiz-sub">If you have an EV charger, the dashboard can separate EV energy from household consumption.</div>
+      <div class="wiz-opts">
+        <div class="wiz-opt` + (_wizData.has_ev==='true'?' selected':'') + `" data-val="true" id="opt-ev-yes">
+          <div class="wiz-opt-icon">🚗</div>
+          <div class="wiz-opt-text">
+            <div class="wiz-opt-label">Yes — I have an EV charger</div>
+            <div class="wiz-opt-desc">Your charger session log CSV must have these columns: <strong>Start Date/Time</strong>, <strong>End Date/Time</strong>, <strong>Energy consumed (Wh)</strong>. Sessions spanning midnight are automatically prorated. If your charger exports different column names, rename them before importing.</div>
+          </div>
+        </div>
+        <div class="wiz-opt` + (_wizData.has_ev==='false'?' selected':'') + `" data-val="false" id="opt-ev-no">
+          <div class="wiz-opt-icon">⏭</div>
+          <div class="wiz-opt-text">
+            <div class="wiz-opt-label">No — skip EV tracking</div>
+            <div class="wiz-opt-desc">All consumption shown as household load. You can enable this later.</div>
+          </div>
+        </div>
+      </div>
+      <div class="wiz-actions">
+        <button class="wiz-btn wiz-btn-secondary" id="wiz-back">← BACK</button>
+        <button class="wiz-btn wiz-btn-primary" id="wiz-next" ` + (_wizData.has_ev!==undefined?'':'disabled') + `>NEXT →</button>
+      </div>`;
+  }
+
+  else if (step === 'battery') {
+    h += _wizDots(step) + `
+      <div class="wiz-step">Step 3 of 4</div>
+      <div class="wiz-title">Do you have a battery storage system?</div>
+      <div class="wiz-sub">Battery charge/discharge tracking is on the roadmap.</div>
+      <div class="wiz-opts">
+        <div class="wiz-opt` + (_wizData.has_battery==='true'?' selected':'') + `" data-val="true" id="opt-bat-yes">
+          <div class="wiz-opt-icon">🔋</div>
+          <div class="wiz-opt-text">
+            <div class="wiz-opt-label">Yes — I have a battery <span class="wiz-pending">PENDING FEATURE</span></div>
+            <div class="wiz-opt-desc">Battery storage tracking is not yet implemented. Your preference will be saved and this feature will be enabled in a future release.</div>
+          </div>
+        </div>
+        <div class="wiz-opt` + (_wizData.has_battery==='false'?' selected':'') + `" data-val="false" id="opt-bat-no">
+          <div class="wiz-opt-icon">⏭</div>
+          <div class="wiz-opt-text">
+            <div class="wiz-opt-label">No — no battery</div>
+            <div class="wiz-opt-desc">Standard solar + grid setup.</div>
+          </div>
+        </div>
+      </div>
+      <div class="wiz-actions">
+        <button class="wiz-btn wiz-btn-secondary" id="wiz-back">← BACK</button>
+        <button class="wiz-btn wiz-btn-primary" id="wiz-next" ` + (_wizData.has_battery!==undefined?'':'disabled') + `>NEXT →</button>
+      </div>`;
+  }
+
+  else if (step === 'dates') {
+    h += _wizDots(step) + `
+      <div class="wiz-step">Step 4 of 4</div>
+      <div class="wiz-title">System dates &amp; timezone</div>
+      <div class="wiz-sub">These dates tell the dashboard when your data became reliable. All fields are optional — leave blank to show all data.</div>
+      <div class="wiz-field">
+        <div class="wiz-label">Port</div>
+        <input class="wiz-input" type="number" id="wiz-port" min="1" max="65535" placeholder="9521" value="` + (_wizData.port||'9521') + `">
+        <div class="wiz-hint">The port this dashboard listens on. Default is 9521. Change in .env if you need a different port — this is saved for display purposes.</div>
+      </div>
+      <div class="wiz-field">
+        <div class="wiz-label">Timezone</div>
+        <input class="wiz-input" type="text" id="wiz-tz" placeholder="e.g. America/New_York  Europe/London  Australia/Sydney" value="` + (_wizData.timezone||'') + `">
+        <div class="wiz-hint">IANA timezone string. Must match your monitoring system's export timezone.</div>
+      </div>
+      <div class="wiz-field">
+        <div class="wiz-label">System install date <span style="font-size:11px;color:var(--muted);text-transform:none">(optional)</span></div>
+        <input class="wiz-input" type="date" id="wiz-cons" value="` + (_wizData.cons_start||'') + `">
+        <div class="wiz-hint">Date consumption monitoring became reliable. Rows before this are flagged invalid.</div>
+      </div>
+      <div class="wiz-field">
+        <div class="wiz-label">Grid export enabled date <span style="font-size:11px;color:var(--muted);text-transform:none">(optional)</span></div>
+        <input class="wiz-input" type="date" id="wiz-prod" value="` + (_wizData.prod_start||'') + `">
+        <div class="wiz-hint">Date solar production became fully valid (e.g. when grid export was switched on).</div>
+      </div>
+      <div class="wiz-field">
+        <div class="wiz-label">Dashboard display start <span style="font-size:11px;color:var(--muted);text-transform:none">(optional)</span></div>
+        <input class="wiz-input" type="date" id="wiz-net" value="` + (_wizData.net_start||'') + `">
+        <div class="wiz-hint">Earliest date shown by default in charts. Usually the first day both sources are valid.</div>
+      </div>
+      <div class="wiz-actions">
+        <button class="wiz-btn wiz-btn-secondary" id="wiz-back">← BACK</button>
+        <button class="wiz-btn wiz-btn-primary" id="wiz-next">FINISH SETUP →</button>
+      </div>`;
+  }
+
+  else if (step === 'done') {
+    const port = _wizData.port || '9521';
+    const host = window.location.hostname;
+    const url  = 'http://' + host + ':' + port;
+    h += `<div style="text-align:center;padding:16px 0">
+      <div style="font-size:48px;margin-bottom:16px">✓</div>
+      <div class="wiz-title" style="text-align:center">Setup complete</div>
+      <div class="wiz-sub" style="text-align:center">Your dashboard is ready. Click <strong>IMPORT DATA</strong> in the header to upload your CSV files.</div>
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:14px 18px;margin:20px 0;text-align:left;">
+        <div style="font-size:11px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:8px;">Your dashboard URL</div>
+        <div style="font-family:monospace;font-size:15px;color:var(--prod);">${url}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:6px;">Bookmark this. Accessible from any device on your local network.</div>
+      </div>
+      <div class="wiz-actions" style="justify-content:center;margin-top:8px">
+        <button class="wiz-btn wiz-btn-primary" id="wiz-done">GO TO DASHBOARD</button>
+      </div>
+    </div>`;
+  }
+
+  h += '</div></div>';
+  main.innerHTML = h;
+
+  // Wire interactions
+  const next = document.getElementById('wiz-next');
+  const back = document.getElementById('wiz-back');
+
+  if (step === 'welcome') {
+    next.onclick = () => _renderWizard('data_type');
+  } else if (step === 'data_type') {
+    document.querySelectorAll('#opt-interval,#opt-daily').forEach(el => {
+      el.onclick = () => {
+        document.querySelectorAll('#opt-interval,#opt-daily').forEach(e => e.classList.remove('selected'));
+        el.classList.add('selected'); _wizSave('data_type', el.dataset.val);
+        document.getElementById('wiz-next').disabled = false;
+      };
+    });
+    back.onclick = () => _renderWizard('welcome');
+    next.onclick = () => _renderWizard('ev');
+  } else if (step === 'ev') {
+    document.querySelectorAll('#opt-ev-yes,#opt-ev-no').forEach(el => {
+      el.onclick = () => {
+        document.querySelectorAll('#opt-ev-yes,#opt-ev-no').forEach(e => e.classList.remove('selected'));
+        el.classList.add('selected'); _wizSave('has_ev', el.dataset.val);
+        document.getElementById('wiz-next').disabled = false;
+      };
+    });
+    back.onclick = () => _renderWizard('data_type');
+    next.onclick = () => _renderWizard('battery');
+  } else if (step === 'battery') {
+    document.querySelectorAll('#opt-bat-yes,#opt-bat-no').forEach(el => {
+      el.onclick = () => {
+        document.querySelectorAll('#opt-bat-yes,#opt-bat-no').forEach(e => e.classList.remove('selected'));
+        el.classList.add('selected'); _wizSave('has_battery', el.dataset.val);
+        document.getElementById('wiz-next').disabled = false;
+      };
+    });
+    back.onclick = () => _renderWizard('ev');
+    next.onclick = () => _renderWizard('dates');
+  } else if (step === 'dates') {
+    document.getElementById('wiz-port').oninput  = e => _wizSave('port',       e.target.value.trim() || '9521');
+    document.getElementById('wiz-tz').oninput    = e => _wizSave('timezone',   e.target.value.trim());
+    document.getElementById('wiz-cons').onchange = e => _wizSave('cons_start', e.target.value);
+    document.getElementById('wiz-prod').onchange = e => _wizSave('prod_start', e.target.value);
+    document.getElementById('wiz-net').onchange  = e => _wizSave('net_start',  e.target.value);
+    back.onclick = () => _renderWizard('battery');
+    next.onclick = async () => {
+      next.disabled = true; next.textContent = 'SAVING…';
+      try {
+        await fetch('/api/setup', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({..._wizData, setup_complete: '1'}),
+        });
+        _renderWizard('done');
+      } catch(e) {
+        next.disabled = false; next.textContent = 'FINISH SETUP →';
+        alert('Error saving setup: ' + e.message);
+      }
+    };
+  } else if (step === 'done') {
+    document.getElementById('wiz-done').onclick = () => loadDashboard();
+  }
+}
+
+function updateStatusBar(summary, daily) {
+  document.getElementById('sb-status').textContent   = 'LIVE';
+  document.getElementById('sb-range').textContent    = `${summary.first_date} → ${summary.last_date}`;
+  document.getElementById('sb-records').textContent  = `${summary.total_days} days`;
+  const lastImport = daily[daily.length - 1]?.imported_at;
+  document.getElementById('sb-imported').textContent = lastImport
+    ? lastImport.replace('T', ' ').replace('Z', '') + ' UTC'
+    : '—';
+}
+
+// ── STAT CARDS (4 combined cards) ────────────────────────────────────────────
+function renderCards(s, hasEV = true) {
+  const net   = s.total_net || 0;
+  const isPos = net >= 0;
+  const surplusPct = s.total_days ? ((s.surplus_days / s.total_days) * 100).toFixed(0) : 0;
+
+  // Each card: { title, accent, rows: [{label, value, unit, sub?}] }
+  const cards = [
+    {
+      title: 'Solar Production', accent: 'var(--prod)',
+      rows: [
+        { label: 'Total',     value: ((s.total_prod||0)/1000).toFixed(2), unit: 'MWh' },
+        { label: 'Best Day',  value: (s.best_prod_kwh||0).toFixed(1),     unit: 'kWh', sub: s.best_prod_date || '—' },
+        { label: 'Avg Daily', value: (s.avg_daily_prod||0).toFixed(1),    unit: 'kWh' },
+      ],
+    },
+    {
+      title: 'Consumption', accent: 'var(--cons)',
+      rows: [
+        { label: 'Total',     value: ((s.total_cons||0)/1000).toFixed(2), unit: 'MWh' },
+        { label: 'Peak Day',  value: (s.peak_cons_kwh||0).toFixed(1),     unit: 'kWh', sub: s.peak_cons_date || '—' },
+        { label: 'Avg Daily', value: (s.avg_daily_cons||0).toFixed(1),    unit: 'kWh' },
+      ],
+    },
+    {
+      title: 'Energy Balance', accent: isPos ? 'var(--surplus)' : 'var(--deficit)',
+      rows: [
+        { label: isPos ? 'Net Surplus' : 'Net Deficit',
+          value: Math.abs(net).toFixed(0), unit: 'kWh',
+          sub: `${Math.abs(net/1000).toFixed(2)} MWh ${isPos ? 'exported' : 'imported'}` },
+        { label: 'Self-Sufficiency', value: (s.self_suff_pct||0).toFixed(1), unit: '%' },
+        { label: 'Surplus Days',     value: s.surplus_days||0, unit: '', sub: `${surplusPct}% of ${s.total_days||0} days` },
+      ],
+    },
+    ...(hasEV ? [{
+      title: 'EV & House Load', accent: 'var(--ev)',
+      rows: [
+        { label: 'EV Total',    value: ((s.total_ev||0)/1000).toFixed(2),    unit: 'MWh', sub: `${s.total_ev_sessions||0} sessions` },
+        { label: 'House Load',  value: ((s.total_house||0)/1000).toFixed(2), unit: 'MWh', sub: 'excl. EV' },
+      ],
+    }] : []),
+  ];
+
+  const main = document.getElementById('main');
+  main.innerHTML = '';
+
+  const sec = document.createElement('div');
+  sec.innerHTML = '<div class="section-label">// METRICS OVER TIME</div>';
+  // Compact date range bar for stat cards
+  const drBar = document.createElement('div');
+  drBar.style.cssText = 'display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px;font-family:"Share Tech Mono",monospace;font-size:11px;color:var(--muted);';
+  const _mono = 'font-family:monospace;';
+  drBar.innerHTML =
+    '<span>RANGE:</span>' +
+    '<input type="date" id="dr-from" style="background:var(--bg2);border:1px solid var(--border);border-radius:3px;color:var(--text);' + _mono + 'font-size:11px;padding:3px 7px;">' +
+    '<span>→</span>' +
+    '<input type="date" id="dr-to"   style="background:var(--bg2);border:1px solid var(--border);border-radius:3px;color:var(--text);' + _mono + 'font-size:11px;padding:3px 7px;">' +
+    ['all','1y','ytd','90d','30d'].map(p =>
+      '<button class="date-preset' + (_drPreset===p?' active':'') + '" data-preset="' + p + '" style="background:var(--bg3);border:1px solid var(--border);border-radius:3px;color:var(--muted);' + _mono + 'font-size:10px;padding:3px 7px;cursor:pointer;letter-spacing:1px;">' + p.toUpperCase() + '</button>'
+    ).join('') +
+    '<button id="dr-apply" style="background:var(--bg3);border:1px solid var(--prod);border-radius:3px;color:var(--prod);' + _mono + 'font-size:10px;padding:3px 7px;cursor:pointer;letter-spacing:1px;">APPLY</button>';
+  sec.appendChild(drBar);
+
+  // Restore saved date inputs and wire events
+  const drFrom = drBar.querySelector('#dr-from');
+  const drTo   = drBar.querySelector('#dr-to');
+  if (_drFrom) drFrom.value = _drFrom;
+  if (_drTo)   drTo.value   = _drTo;
+  drBar.querySelectorAll('[data-preset]').forEach(btn => {
+    btn.addEventListener('click', () => { _drSetPreset(btn.dataset.preset); loadDashboard(); });
+  });
+  drBar.querySelector('#dr-apply').addEventListener('click', () => {
+    _drFrom = drFrom.value || null;
+    _drTo   = drTo.value   || null;
+    _drPreset = 'custom';
+    drBar.querySelectorAll('[data-preset]').forEach(b => b.classList.remove('active'));
+    drBar.querySelector('#dr-apply').style.borderColor = 'var(--prod)';
+    loadDashboard();
+  });
+
+  const grid = document.createElement('div');
+  grid.className = 'cards-grid';
+  grid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(220px, 1fr))';
+
+  cards.forEach(c => {
+    const el = document.createElement('div');
+    el.className = 'card';
+    el.style.setProperty('--card-accent', c.accent);
+
+    const rowsHtml = c.rows.map(r => `
+      <div class="card-row">
+        <span class="card-row-label">${r.label}</span>
+        <span class="card-row-value" style="color:${c.accent}">${r.value}<span class="card-row-unit">${r.unit}</span></span>
+        ${r.sub ? `<span class="card-row-sub">${r.sub}</span>` : ''}
+      </div>`).join('<div class="card-divider"></div>');
+
+    el.innerHTML = `
+      <div class="card-title">${c.title}</div>
+      ${rowsHtml}`;
+    grid.appendChild(el);
+  });
+
+  sec.appendChild(grid);
+  main.appendChild(sec);
+}
+// ── SCATTER PLOT ──────────────────────────────────────────────────────────────
+function dayOfYear(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  return Math.floor((d - new Date(d.getFullYear(), 0, 0)) / 86400000);
+}
+
+// Scatter state
+let _sDaily  = null;
+let _sHasEV  = true;
+let _sFit    = 'off';   // 'off' | 'loess' | 'poly'
+let _sState  = { view: 'all', ev: 'with', years: null };
+
+// Scatter — full width standalone section
+function renderScatter(daily, hasEV = true) {
+  _sDaily = daily;
+  _sHasEV = hasEV;
+  _sFit   = 'off';
+  _sState = { view: 'all', ev: 'with', years: null };
+  window._charts.scatter = null;
+
+  const main = document.getElementById('main');
+  // Plain full-width container — no grid class needed for standalone scatter
+  const row = document.createElement('div');
+  row.id = 'scatter-trend-row';
+  main.appendChild(row);
+  _buildScatter();
+}
+
+// Trend — half width standalone section
+function renderTrend(daily) {
+  _sDaily = _sDaily || daily;
+  window._charts.trend = null;
+  const main = document.getElementById('main');
+  // Create a dedicated top-level wrapper for the trend panel
+  const tWrap = document.createElement('div');
+  tWrap.id = 'trend-standalone-wrap';
+  main.appendChild(tWrap);
+  _buildTrend(tWrap);
+}
+
+// Legacy combined wrapper (kept for any internal references)
+function renderScatterAndTrend(daily, hasEV = true) {
+  _sDaily = daily;
+  _sHasEV = hasEV;
+  _sFit   = 'off';
+  _sState = { view: 'all', ev: 'with', years: null };
+  window._charts.scatter = null;
+  window._charts.trend   = null;
+  const main = document.getElementById('main');
+  const row  = document.createElement('div');
+  row.className = 'scatter-trend-row';  // grid layout needed when both panels present
+  row.id = 'scatter-trend-row';
+  main.appendChild(row);
+  _buildScatter();
+  _buildTrend(row);
+}
+
+// ── CURVE FIT HELPERS ────────────────────────────────────────────────────────
+
+function _loess(pts, bandwidth) {
+  // pts: [{x, y}] sorted by x. Returns [{x, y}] smoothed values at same x positions.
+  const n = pts.length;
+  if (n < 3) return pts;
+  const bw = Math.max(Math.ceil(bandwidth * n), 3);
+  return pts.map((p, i) => {
+    const lo = Math.max(0, i - bw), hi = Math.min(n - 1, i + bw);
+    const neighbors = pts.slice(lo, hi + 1);
+    const maxDist = Math.max(Math.abs(p.x - neighbors[0].x), Math.abs(p.x - neighbors[neighbors.length-1].x)) || 1;
+    let sw = 0, swx = 0, swy = 0, swxx = 0, swxy = 0;
+    neighbors.forEach(q => {
+      const u = Math.abs(p.x - q.x) / maxDist;
+      const w = Math.pow(1 - Math.pow(Math.min(u, 1), 3), 3);
+      sw   += w;   swx  += w*q.x; swy  += w*q.y;
+      swxx += w*q.x*q.x; swxy += w*q.x*q.y;
+    });
+    const det = sw*swxx - swx*swx;
+    if (Math.abs(det) < 1e-10) return { x: p.x, y: swy/sw };
+    const b1 = (sw*swxy - swx*swy) / det;
+    const b0 = (swy - b1*swx) / sw;
+    return { x: p.x, y: b0 + b1*p.x };
+  });
+}
+
+function _polyFit(pts, degree) {
+  // Least-squares polynomial fit. Returns [{x, y}] at same x positions.
+  const n = pts.length;
+  if (n < degree + 1) return pts;
+  const d = degree + 1;
+  // Build normal equations A^T A c = A^T y
+  const A = pts.map(p => Array.from({length: d}, (_, k) => Math.pow(p.x, k)));
+  const AtA = Array.from({length: d}, (_, i) => Array.from({length: d}, (_, j) =>
+    A.reduce((s, row) => s + row[i]*row[j], 0)));
+  const Aty = Array.from({length: d}, (_, i) => A.reduce((s, row, ri) => s + row[i]*pts[ri].y, 0));
+  // Gaussian elimination
+  const M = AtA.map((row, i) => [...row, Aty[i]]);
+  for (let col = 0; col < d; col++) {
+    let pivot = col;
+    for (let r = col+1; r < d; r++) if (Math.abs(M[r][col]) > Math.abs(M[pivot][col])) pivot = r;
+    [M[col], M[pivot]] = [M[pivot], M[col]];
+    if (Math.abs(M[col][col]) < 1e-12) continue;
+    for (let r = 0; r < d; r++) {
+      if (r === col) continue;
+      const f = M[r][col] / M[col][col];
+      for (let c = col; c <= d; c++) M[r][c] -= f * M[col][c];
+    }
+  }
+  const coef = M.map((row, i) => row[d] / row[i]);
+  return pts.map(p => ({ x: p.x, y: coef.reduce((s, c, k) => s + c * Math.pow(p.x, k), 0) }));
+}
+
+function _fitDatasets(rows, year, alpha, useHouse) {
+  // Build fit line datasets for one year. Returns array of Chart.js datasets.
+  if (_sFit === 'off' || !rows.length) return [];
+  const fitFn = _sFit === 'loess'
+    ? pts => _loess(pts, 0.2)
+    : pts => _polyFit(pts, 4);
+
+  const result = [];
+  const prodPts = rows.map(r => ({ x: dayOfYear(r.date), y: r.prod_kwh })).sort((a,b)=>a.x-b.x);
+  const consPts = rows.map(r => ({ x: dayOfYear(r.date), y: useHouse ? r.house_kwh : r.cons_kwh })).sort((a,b)=>a.x-b.x);
+  const fitAlpha = (parseFloat(alpha) * 0.7).toFixed(2);
+
+  result.push({
+    label: `Prod Fit ${year}`,
+    data:  fitFn(prodPts),
+    borderColor: `rgba(245,158,11,${fitAlpha})`,
+    backgroundColor: 'transparent',
+    borderWidth: 1.5,
+    borderDash: [4, 3],
+    pointRadius: 0,
+    tension: 0.4,
+    type: 'line',
+  });
+  result.push({
+    label: `Cons Fit ${year}`,
+    data:  fitFn(consPts),
+    borderColor: `rgba(34,211,238,${fitAlpha})`,
+    backgroundColor: 'transparent',
+    borderWidth: 1.5,
+    borderDash: [4, 3],
+    pointRadius: 0,
+    tension: 0.4,
+    type: 'line',
+  });
+  return result;
+}
+
+function _buildScatter() {
+  const daily    = _sDaily;
+  const allYears = [...new Set(daily.map(r => r.date.slice(0,4)))].sort();
+  const n        = allYears.length;
+  const activeYears = _sState.years || allYears;
+
+  const datasets = [];
+  allYears.forEach((year, yi) => {
+    if (!activeYears.includes(year)) return;
+    const t     = n === 1 ? 1 : yi / (n - 1);
+    const alpha = (0.25 + t * 0.60).toFixed(2);
+    const rows  = daily.filter(r => r.date.startsWith(year));
+    const useHouse = _sState.ev === 'without';
+
+    if (_sState.view !== 'cons') {
+      datasets.push({
+        label: `Prod ${year}`,
+        data: rows.map(r => ({ x: dayOfYear(r.date), y: r.prod_kwh })),
+        backgroundColor: `rgba(245,158,11,${alpha})`,
+        pointRadius: 3, pointHoverRadius: 5,
+      });
+    }
+    if (_sState.view !== 'prod') {
+      const evAlpha = (parseFloat(alpha) * 0.85).toFixed(2);
+      const showEvDots = _sState.ev === 'with';
+      datasets.push({
+        label: `Cons ${year}`,
+        data: rows.map(r => ({ x: dayOfYear(r.date), y: useHouse ? r.house_kwh : r.cons_kwh })),
+        backgroundColor: rows.map(r =>
+          (showEvDots && r.ev_kwh > 0)
+            ? `rgba(167,139,250,${evAlpha})`
+            : `rgba(34,211,238,${alpha})`
+        ),
+        pointRadius: 3, pointHoverRadius: 5,
+      });
+    }
+    // Inject fit lines for this year (respects VIEW toggle)
+    _fitDatasets(rows, year, alpha, useHouse).forEach(ds => {
+      if (_sState.view === 'cons' && ds.label.startsWith('Prod Fit')) return;
+      if (_sState.view === 'prod' && ds.label.startsWith('Cons Fit')) return;
+      datasets.push(ds);
+    });
+  });
+
+  // Data-only update if chart already exists
+  if (window._charts.scatter) {
+    window._charts.scatter.data.datasets = datasets;
+    window._charts.scatter.update();
+    _syncScatterToggles(allYears);
+    return;
+  }
+
+  // Full DOM build
+  const row = document.getElementById('scatter-trend-row');
+  const wrap = document.createElement('div');
+  wrap.id = 'scatter-section';
+
+  const yearChips = allYears.map(yr =>
+    `<button class="tog active-year" data-year="${yr}" id="ychip-${yr}">${yr}</button>`
+  ).join('');
+
+  wrap.innerHTML = `
+    <div class="section-label">// DAILY OUTPUT BY CALENDAR DAY</div>
+    <div class="panel">
+      <div class="panel-header" style="flex-direction:column;align-items:flex-start;gap:10px;">
+        <div style="display:flex;justify-content:space-between;width:100%;align-items:center;flex-wrap:wrap;gap:8px;">
+          <div class="panel-title">Production vs Consumption — Jan → Dec</div>
+          <div class="legend" id="scatter-legend">
+            ${allYears.map((yr, yi) => {
+              const t = n===1?1:yi/(n-1);
+              const a = (0.25+t*0.60).toFixed(2);
+              return `<span style="font-size:11px;color:${cssVar('--muted')}">${yr}</span>
+                      <span class="legend-dot" style="background:rgba(245,158,11,${a})"></span>
+                      <span class="legend-dot" style="background:rgba(34,211,238,${a})"></span>`;
+            }).join('')}
+            <span style="border-left:1px solid ${cssVar('--border')};padding-left:10px;display:flex;gap:10px;">
+              <span class="legend-item"><span class="legend-dot" style="background:var(--prod)"></span>Prod</span>
+              <span class="legend-item"><span class="legend-dot" style="background:var(--cons)"></span>Cons</span>
+              ${_sHasEV ? `<span class="legend-item" id="ev-dot-legend" style="display:${_sState.ev === 'with' ? 'flex' : 'none'}"><span class="legend-dot" style="background:var(--ev)"></span>Cons + EV day</span>` : ''}
+            </span>
+          </div>
+        </div>
+        <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:center;">
+          <div class="toggle-group">
+            <span class="toggle-group-label">VIEW</span>
+            <button class="tog active" id="tog-all"  >ALL</button>
+            <button class="tog"        id="tog-prod" >PROD ONLY</button>
+            <button class="tog"        id="tog-cons" >CONS ONLY</button>
+          </div>
+          <div class="toggle-group">
+            <span class="toggle-group-label">YEARS</span>
+            <button class="tog active" id="tog-allyears">ALL YEARS</button>
+            <button class="tog"        id="tog-selyears">SELECT</button>
+          </div>
+          ${_sHasEV ? `<div class="toggle-group">
+            <span class="toggle-group-label">EV</span>
+            <button class="tog active-ev" id="tog-withev"   >WITH EV</button>
+            <button class="tog"           id="tog-withoutev">NO EV</button>
+          </div>` : ''}
+          <div class="toggle-group">
+            <span class="toggle-group-label">FIT</span>
+            <button class="tog active" id="tog-fit-off"  >OFF</button>
+            <button class="tog"        id="tog-fit-loess">LOESS</button>
+            <button class="tog"        id="tog-fit-poly" >POLY</button>
+          </div>
+        </div>
+        <div class="year-chips" id="year-chips" style="display:none">${yearChips}</div>
+      </div>
+      <div class="chart-wrap" style="height:340px"><canvas id="scatter-canvas"></canvas></div>
+    </div>`;
+  row.appendChild(wrap);
+
+  // View toggles
+  wrap.querySelector('#tog-all').addEventListener('click',  () => { _sState.view = 'all';  _buildScatter(); });
+  wrap.querySelector('#tog-prod').addEventListener('click', () => { _sState.view = 'prod'; _buildScatter(); });
+  wrap.querySelector('#tog-cons').addEventListener('click', () => { _sState.view = 'cons'; _buildScatter(); });
+
+  // Years toggles
+  wrap.querySelector('#tog-allyears').addEventListener('click', () => {
+    _sState.years = null;
+    wrap.querySelector('#year-chips').style.display = 'none';
+    _buildScatter();
+  });
+  wrap.querySelector('#tog-selyears').addEventListener('click', () => {
+    if (_sState.years === null) _sState.years = [...allYears];
+    wrap.querySelector('#year-chips').style.display = 'flex';
+    _buildScatter();
+  });
+  allYears.forEach(yr => {
+    wrap.querySelector(`#ychip-${yr}`).addEventListener('click', () => {
+      if (_sState.years === null) return;
+      const idx = _sState.years.indexOf(yr);
+      if (idx >= 0 && _sState.years.length > 1) _sState.years.splice(idx, 1);
+      else if (idx < 0) { _sState.years.push(yr); _sState.years.sort(); }
+      _buildScatter();
+    });
+  });
+
+  // EV toggles
+  if (_sHasEV) {
+    wrap.querySelector('#tog-withev').addEventListener('click', () => {
+      _sState.ev = 'with';
+      _buildScatter();
+      const el = document.getElementById('ev-dot-legend');
+      if (el) el.style.display = 'flex';
+    });
+    wrap.querySelector('#tog-withoutev').addEventListener('click', () => {
+      _sState.ev = 'without';
+      _buildScatter();
+      const el = document.getElementById('ev-dot-legend');
+      if (el) el.style.display = 'none';
+    });
+  }
+
+  // FIT toggles
+  [['#tog-fit-off','off'],['#tog-fit-loess','loess'],['#tog-fit-poly','poly']].forEach(([sel,val]) => {
+    wrap.querySelector(sel).addEventListener('click', () => {
+      _sFit = val;
+      wrap.querySelectorAll('#tog-fit-off,#tog-fit-loess,#tog-fit-poly').forEach(b => b.classList.remove('active'));
+      wrap.querySelector(sel).classList.add('active');
+      _buildScatter();
+    });
+  });
+
+  const { color, grid, gridSoft } = chartDefaults();
+  window._charts.scatter = new Chart(
+    wrap.querySelector('#scatter-canvas').getContext('2d'),
+    {
+      type: 'scatter',
+      data: { datasets },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            ...tooltipStyle(),
+            callbacks: {
+              label: ctx => {
+                const isC = ctx.dataset.label.startsWith('Cons');
+                if (isC && _sState.ev === 'without') return `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)} kWh (house only)`;
+                if (isC && _sState.ev === 'with') {
+                  // Find the original row to check ev_kwh
+                  const doy = ctx.parsed.x;
+                  const year = ctx.dataset.label.replace('Cons ', '');
+                  const row = _sDaily.find(r => r.date.startsWith(year) && dayOfYear(r.date) === doy);
+                  const evSuffix = (row && row.ev_kwh > 0) ? ` ⚡ ${row.ev_kwh.toFixed(1)} kWh EV` : '';
+                  return `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)} kWh${evSuffix}`;
+                }
+                return `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)} kWh`;
+              },
+            },
+          },
+        },
+        scales: {
+          x: {
+            type: 'linear', min: 1, max: 366,
+            afterBuildTicks: axis => { axis.ticks = MONTH_DOYS.map(v => ({ value: v })); },
+            ticks: {
+              color,
+              font: { family: "'Share Tech Mono', monospace", size: 11 },
+              callback: v => {
+                const i = MONTH_DOYS.findIndex((t, idx) => v >= t && (idx === 11 || v < MONTH_DOYS[idx+1]));
+                return i >= 0 ? MONTHS[i] : '';
+              },
+            },
+            grid: { color: gridSoft }, border: { color: grid },
+          },
+          y: {
+            ticks: { color, font: { family: "'Share Tech Mono', monospace", size: 11 }, callback: v => v + ' kWh' },
+            grid: { color: gridSoft }, border: { color: grid },
+          },
+        },
+      },
+    }
+  );
+  _syncScatterToggles(allYears);
+}
+
+function _syncScatterToggles(allYears) {
+  const sec = document.getElementById('scatter-section');
+  if (!sec) return;
+  ['all','prod','cons'].forEach(v => {
+    const el = sec.querySelector(`#tog-${v}`);
+    if (el) el.className = 'tog' + (_sState.view === v ? ' active' : '');
+  });
+  const isSelMode = _sState.years !== null;
+  const ay = sec.querySelector('#tog-allyears');
+  const sy = sec.querySelector('#tog-selyears');
+  if (ay) ay.className = 'tog' + (!isSelMode ? ' active' : '');
+  if (sy) sy.className = 'tog' + (isSelMode ? ' active-year' : '');
+  const chips = sec.querySelector('#year-chips');
+  if (chips) chips.style.display = isSelMode ? 'flex' : 'none';
+  if (isSelMode) {
+    allYears.forEach(yr => {
+      const chip = sec.querySelector(`#ychip-${yr}`);
+      if (chip) chip.className = 'tog' + (_sState.years.includes(yr) ? ' active-year' : '');
+    });
+  }
+  const we  = sec.querySelector('#tog-withev');
+  const noe = sec.querySelector('#tog-withoutev');
+  if (we)  we.className  = 'tog' + (_sState.ev === 'with'    ? ' active-ev' : '');
+  if (noe) noe.className = 'tog' + (_sState.ev === 'without' ? ' active-ev' : '');
+}
+
+// ── TREND CHART ───────────────────────────────────────────────────────────────
+function _buildTrend(container) {
+  const daily = _sDaily;
+  const WINDOW = 30;
+
+  const sorted = [...daily].sort((a,b) => a.date.localeCompare(b.date));
+
+  // 30-day rolling average — x is numeric index (avoids date adapter dependency)
+  const rollingAvg = sorted.map((r, i) => {
+    const slice = sorted.slice(Math.max(0, i - WINDOW + 1), i + 1);
+    const avg   = slice.reduce((s, d) => s + d.net_kwh, 0) / slice.length;
+    return { x: i, y: parseFloat(avg.toFixed(2)) };
+  });
+
+  // Raw daily net as faint scatter
+  const rawNet = sorted.map((r, i) => ({ x: i, y: parseFloat(r.net_kwh.toFixed(2)) }));
+
+  // Use passed container, or standalone wrap, or scatter-trend-row
+  const row = container || document.getElementById('trend-standalone-wrap') || document.getElementById('scatter-trend-row');
+  const wrap = document.createElement('div');
+  wrap.id = 'trend-section';
+  wrap.innerHTML = `
+    <div class="section-label">// NET SURPLUS TREND</div>
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">Net Energy — 30d Rolling Avg</div>
+        <div class="legend">
+          <span class="legend-item"><span class="legend-dot" style="background:var(--surplus)"></span>Surplus</span>
+          <span class="legend-item"><span class="legend-dot" style="background:var(--deficit)"></span>Deficit</span>
+        </div>
+      </div>
+      <div class="chart-wrap" style="height:340px"><canvas id="trend-canvas"></canvas></div>
+    </div>`;
+  row.appendChild(wrap);
+
+  const { color, grid, gridSoft } = chartDefaults();
+
+  // Split into surplus/deficit segments — null where the other applies
+  const surplusLine = rollingAvg.map(p => ({ x: p.x, y: p.y >= 0 ? p.y : null }));
+  const deficitLine = rollingAvg.map(p => ({ x: p.x, y: p.y <  0 ? p.y : null }));
+  // Zero line uses first/last index
+  const zeroStart = 0;
+  const zeroEnd   = sorted.length - 1;
+
+  if (window._charts.trend) window._charts.trend.destroy();
+  window._charts.trend = new Chart(
+    wrap.querySelector('#trend-canvas').getContext('2d'),
+    {
+      type: 'line',
+      data: {
+        datasets: [
+          {
+            // Zero reference line — rendered as a flat dataset, no plugin needed
+            label: 'Zero',
+            data: [
+              { x: zeroStart, y: 0 },
+              { x: zeroEnd,   y: 0 },
+            ],
+            borderColor: cssVar('--muted'),
+            borderWidth: 1,
+            borderDash: [4, 4],
+            pointRadius: 0,
+            fill: false,
+          },
+          {
+            label: 'Raw daily net',
+            data: rawNet,
+            borderColor: 'transparent',
+            backgroundColor: 'rgba(148,163,184,0.15)',
+            pointRadius: 2,
+            pointHoverRadius: 4,
+            showLine: false,
+            // No parsing:false — let Chart.js parse {x, y} natively
+          },
+          {
+            label: 'Surplus (30d avg)',
+            data: surplusLine,
+            borderColor: '#34d399',
+            borderWidth: 2,
+            pointRadius: 0,
+            tension: 0.3,
+            fill: { target: 'origin', above: 'rgba(52,211,153,0.12)' },
+            spanGaps: false,
+          },
+          {
+            label: 'Deficit (30d avg)',
+            data: deficitLine,
+            borderColor: '#f87171',
+            borderWidth: 2,
+            pointRadius: 0,
+            tension: 0.3,
+            fill: { target: 'origin', below: 'rgba(248,113,113,0.12)' },
+            spanGaps: false,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            ...tooltipStyle(),
+            filter: item => !['Raw daily net','Zero'].includes(item.dataset.label),
+            callbacks: {
+              title: items => {
+                const idx = items[0]?.parsed?.x;
+                return (idx != null && sorted[Math.round(idx)]) ? sorted[Math.round(idx)].date : '';
+              },
+              label: ctx => {
+                if (ctx.parsed?.y == null) return null;
+                return `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)} kWh`;
+              },
+            },
+          },
+          // zero line rendered as a dataset — no plugin required
+        },
+        scales: {
+          x: {
+            type: 'linear',
+            ticks: {
+              color,
+              font: { family: "'Share Tech Mono', monospace", size: 9 },
+              maxRotation: 0,
+              callback: (val) => {
+                // val is the index into sorted array — map back to MMM YY
+                const r = sorted[Math.round(val)];
+                if (!r) return '';
+                const d = new Date(r.date + 'T00:00:00');
+                // Show label only on the 1st of each month
+                if (d.getDate() > 3) return '';
+                return d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+              },
+              autoSkip: false,
+              maxTicksLimit: 24,
+            },
+            grid: { color: gridSoft }, border: { color: grid },
+          },
+          y: {
+            ticks: { color, font: { family: "'Share Tech Mono', monospace", size: 11 }, callback: v => v + ' kWh' },
+            grid: { color: gridSoft }, border: { color: grid },
+          },
+        },
+      },
+    }
+  );
+}
+
+// ── MONTHLY PRODUCTION + YoY ─────────────────────────────────────────────────
+// Error bar mode: 'sd' | 'sem'
+let _errMode = 'sd';
+// YoY view mode: 'annual' | 'monthly'
+let _yoyMode = 'annual';
+// BY MONTH sub-view: 'prod' | 'cons'
+let _yoyMonthlyView = 'prod';
+let _yoyMonthly = null;  // stored for toggle re-render
+let _yoyDaily   = null;
+let _yoyHasEV   = true;
+
+function _stdDev(arr) {
+  if (arr.length < 2) return 0;
+  const mean = arr.reduce((a,b) => a+b, 0) / arr.length;
+  return Math.sqrt(arr.reduce((s, v) => s + (v - mean) ** 2, 0) / (arr.length - 1));
+}
+
+function renderMonthlyAndYoY(monthly, daily, hasEV = true) {
+  _yoyMonthly = monthly;
+  _yoyDaily   = daily;
+  _yoyHasEV   = hasEV;
+
+  const main = document.getElementById('main');
+  const sec  = document.createElement('div');
+  sec.id = 'monthly-section';
+  sec.innerHTML = '<div class="section-label">// MONTHLY & ANNUAL BREAKDOWN</div>';
+  const two = document.createElement('div');
+  two.className = 'two-col';
+
+  // ── Per-month stats: production kWh per year ──────────────────────────────
+  // Group: byMonth[i].yearVals = [kWh for each year that has data for month i]
+  const byMonth = Array.from({length:12}, () => ({ yearVals: [] }));
+  monthly.forEach(m => {
+    const idx = parseInt(m.month.slice(5)) - 1;
+    if (m.prod_kwh > 0) byMonth[idx].yearVals.push(m.prod_kwh);
+  });
+
+  const monthStats = byMonth.map(m => {
+    const n = m.yearVals.length;
+    if (n === 0) return { mean: 0, sd: 0, sem: 0, n: 0 };
+    const mean = m.yearVals.reduce((a,b) => a+b, 0) / n;
+    const sd   = _stdDev(m.yearVals);
+    const sem  = sd / Math.sqrt(n);
+    return { mean, sd, sem, n };
+  });
+
+  // ── Left panel: monthly production bars ──────────────────────────────────
+  const leftPanel = document.createElement('div');
+  leftPanel.className = 'panel';
+  leftPanel.id = 'monthly-panel';
+  leftPanel.innerHTML = `
+    <div class="panel-header">
+      <div style="display:flex;align-items:baseline;gap:8px;">
+        <div class="panel-title">Avg Monthly Production</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted)">MWh</div>
+      </div>
+      <div class="toggle-group">
+        <button class="tog active" id="err-sd" >+SD</button>
+        <button class="tog"        id="err-sem">+SEM</button>
+      </div>
+    </div>
+    <div class="monthly-grid" id="monthly-bars"></div>`;
+  two.appendChild(leftPanel);
+
+  leftPanel.querySelector('#err-sd').addEventListener('click', () => {
+    _errMode = 'sd';
+    _rebuildMonthlyBars(monthStats, leftPanel.querySelector('#monthly-bars'));
+    leftPanel.querySelector('#err-sd').className  = 'tog active';
+    leftPanel.querySelector('#err-sem').className = 'tog';
+  });
+  leftPanel.querySelector('#err-sem').addEventListener('click', () => {
+    _errMode = 'sem';
+    _rebuildMonthlyBars(monthStats, leftPanel.querySelector('#monthly-bars'));
+    leftPanel.querySelector('#err-sd').className  = 'tog';
+    leftPanel.querySelector('#err-sem').className = 'tog active';
+  });
+
+  _rebuildMonthlyBars(monthStats);
+
+  // ── Right panel: YoY chart with BY YEAR / BY MONTH toggle ────────────────
+  const years = [...new Set(daily.map(r => r.date.slice(0,4)))].sort();
+  const rightPanel = document.createElement('div');
+  rightPanel.className = 'panel';
+  rightPanel.id = 'yoy-panel';
+  rightPanel.innerHTML = `
+    <div class="panel-header" style="flex-direction:column;align-items:flex-start;gap:8px;">
+      <div class="panel-title">Year-over-Year</div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+        <div class="toggle-group">
+          <button class="tog active" id="yoy-annual" >BY YEAR</button>
+          <button class="tog"        id="yoy-monthly">BY MONTH</button>
+        </div>
+        <div class="toggle-group" id="yoy-view-toggle" style="display:none">
+          <button class="tog active-prod" id="yoy-view-prod">PRODUCTION</button>
+          <button class="tog"             id="yoy-view-cons">CONSUMPTION</button>
+        </div>
+        <div class="legend" id="yoy-legend">
+          <span class="legend-item"><span class="legend-dot" style="background:var(--prod)"></span>Prod</span>
+          <span class="legend-item"><span class="legend-dot" style="background:var(--cons)"></span>House</span>
+          ${_yoyHasEV ? '<span class="legend-item"><span class="legend-dot" style="background:var(--ev)"></span>EV</span>' : ''}
+        </div>
+      </div>
+    </div>
+    <div class="chart-wrap" style="height:220px"><canvas id="yoy-canvas"></canvas></div>`;
+  two.appendChild(rightPanel);
+
+  sec.appendChild(two);
+  main.appendChild(sec);
+
+  // DOM is now live — safe to render monthly bars
+  _rebuildMonthlyBars(monthStats, leftPanel.querySelector('#monthly-bars'));
+
+  // Wire YoY mode toggles
+  const _syncYoyToggles = () => {
+    rightPanel.querySelector('#yoy-annual').className  = _yoyMode === 'annual'  ? 'tog active'      : 'tog';
+    rightPanel.querySelector('#yoy-monthly').className = _yoyMode === 'monthly' ? 'tog active-year' : 'tog';
+    const vt = rightPanel.querySelector('#yoy-view-toggle');
+    if (vt) vt.style.display = _yoyMode === 'monthly' ? 'flex' : 'none';
+    const vp = rightPanel.querySelector('#yoy-view-prod');
+    const vc = rightPanel.querySelector('#yoy-view-cons');
+    if (vp) vp.className = _yoyMonthlyView === 'prod' ? 'tog active-prod' : 'tog';
+    if (vc) vc.className = _yoyMonthlyView === 'cons' ? 'tog active-cons' : 'tog';
+  };
+  rightPanel.querySelector('#yoy-annual').addEventListener('click', () => {
+    _yoyMode = 'annual'; _syncYoyToggles(); _buildYoY(years, rightPanel);
+  });
+  rightPanel.querySelector('#yoy-monthly').addEventListener('click', () => {
+    _yoyMode = 'monthly'; _syncYoyToggles(); _buildYoY(years, rightPanel);
+  });
+  rightPanel.querySelector('#yoy-view-prod').addEventListener('click', () => {
+    _yoyMonthlyView = 'prod'; _syncYoyToggles(); _buildYoY(years, rightPanel);
+  });
+  rightPanel.querySelector('#yoy-view-cons').addEventListener('click', () => {
+    _yoyMonthlyView = 'cons'; _syncYoyToggles(); _buildYoY(years, rightPanel);
+  });
+
+  _buildYoY(years, rightPanel);
+}
+
+function _buildYoY(years, rightPanel) {
+  const monthly = _yoyMonthly;
+  const daily   = _yoyDaily;
+  if (window._charts.yoy) { window._charts.yoy.destroy(); window._charts.yoy = null; }
+  const { color, grid, gridSoft } = chartDefaults();
+
+  if (_yoyMode === 'annual') {
+    // ── Annual totals: one grouped+stacked bar per year ──────────────────────
+    const yoyProd  = years.map(y => daily.filter(r=>r.date.startsWith(y)).reduce((s,r)=>s+r.prod_kwh, 0));
+    const yoyHouse = years.map(y => daily.filter(r=>r.date.startsWith(y)).reduce((s,r)=>s+r.house_kwh, 0));
+    const yoyEv    = _yoyHasEV ? years.map(y => daily.filter(r=>r.date.startsWith(y)).reduce((s,r)=>s+r.ev_kwh, 0)) : null;
+
+    window._charts.yoy = new Chart(
+      rightPanel.querySelector('#yoy-canvas').getContext('2d'),
+      {
+        type: 'bar',
+        data: {
+          labels: years,
+          datasets: [
+            { label: 'Production', data: yoyProd,  backgroundColor: 'rgba(245,158,11,0.75)', borderColor: '#f59e0b', borderWidth: 1, stack: 'prod' },
+            { label: 'House',      data: yoyHouse, backgroundColor: 'rgba(34,211,238,0.45)', borderColor: '#22d3ee', borderWidth: 1, stack: 'cons' },
+            ...(_yoyHasEV && yoyEv ? [{ label: 'EV', data: yoyEv, backgroundColor: 'rgba(167,139,250,0.65)', borderColor: '#a78bfa', borderWidth: 1, stack: 'cons' }] : []),
+          ],
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              ...tooltipStyle(),
+              callbacks: {
+                label: ctx => `${ctx.dataset.label}: ${(ctx.parsed.y/1000).toFixed(2)} MWh`,
+                footer: items => {
+                  const c = items.filter(i => (_yoyHasEV ? ['House','EV'] : ['House']).includes(i.dataset.label));
+                  if (c.length > 1) return `Total cons: ${(c.reduce((s,i)=>s+i.parsed.y,0)/1000).toFixed(2)} MWh`;
+                  return '';
+                },
+              },
+            },
+          },
+          scales: {
+            x: { stacked: true, ticks: { color, font: { family: "'Share Tech Mono', monospace", size: 11 } }, grid: { color: gridSoft }, border: { color: grid } },
+            y: { stacked: true, ticks: { color, font: { family: "'Share Tech Mono', monospace", size: 11 }, callback: v => (v/1000).toFixed(1)+' MWh' }, grid: { color: gridSoft }, border: { color: grid } },
+          },
+        },
+      }
+    );
+  } else {
+    // ── BY MONTH: 12 groups on x-axis, one bar per year ──────────────────────
+    // Toggle between PRODUCTION view (one bar/year) and CONSUMPTION view (house+EV stacked/year)
+    const showProd = _yoyMonthlyView === 'prod';
+    const datasets = [];
+
+    years.forEach((year, yi) => {
+      const t     = years.length === 1 ? 1 : yi / (years.length - 1);
+      const alpha = (0.5 + t * 0.45).toFixed(2);
+
+      const getVal = (field) => MONTHS.map((_, mi) => {
+        const key = `${year}-${String(mi+1).padStart(2,'0')}`;
+        const row = monthly.find(m => m.month === key);
+        return row ? (row[field] || 0) : 0;
+      });
+
+      if (showProd) {
+        // Production only — one bar per year per month, no stacking
+        datasets.push({
+          label: `Prod ${year}`,
+          data: getVal('prod_kwh'),
+          backgroundColor: `rgba(245,158,11,${alpha})`,
+          borderColor: '#f59e0b', borderWidth: 1,
+          stack: `prod-${year}`,
+        });
+      } else {
+        // Consumption — house + EV stacked per year
+        datasets.push({
+          label: `House ${year}`,
+          data: getVal('house_kwh'),
+          backgroundColor: `rgba(34,211,238,${(parseFloat(alpha)*0.7).toFixed(2)})`,
+          borderColor: '#22d3ee', borderWidth: 1,
+          stack: `cons-${year}`,
+        });
+        if (_yoyHasEV) datasets.push({
+          label: `EV ${year}`,
+          data: getVal('ev_kwh'),
+          backgroundColor: `rgba(167,139,250,${(parseFloat(alpha)*0.85).toFixed(2)})`,
+          borderColor: '#a78bfa', borderWidth: 1,
+          stack: `cons-${year}`,
+        });
+      }
+    });
+
+    window._charts.yoy = new Chart(
+      rightPanel.querySelector('#yoy-canvas').getContext('2d'),
+      {
+        type: 'bar',
+        data: { labels: MONTHS, datasets },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              ...tooltipStyle(),
+              mode: 'index',
+              callbacks: {
+                label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(0)} kWh`,
+                footer: items => {
+                  if (!showProd && items.length > 1) {
+                    const total = items.reduce((s,i)=>s+i.parsed.y,0);
+                    return `Total: ${total.toFixed(0)} kWh`;
+                  }
+                  return '';
+                },
+              },
+            },
+          },
+          scales: {
+            x: { stacked: true, ticks: { color, font: { family: "'Share Tech Mono', monospace", size: 11 } }, grid: { color: gridSoft }, border: { color: grid } },
+            y: { stacked: true, ticks: { color, font: { family: "'Share Tech Mono', monospace", size: 11 }, callback: v => v+' kWh' }, grid: { color: gridSoft }, border: { color: grid } },
+          },
+        },
+      }
+    );
+  }
+}
+
+function _rebuildMonthlyBars(monthStats, barsEl) {
+  // barsEl passed directly to avoid getElementById timing issues
+  if (!barsEl) barsEl = document.getElementById('monthly-bars');
+  if (!barsEl) return;
+  barsEl.innerHTML = '';
+
+  // Scale: max = highest mean + upper error
+  const maxVal = Math.max(...monthStats.map(s => s.mean + (_errMode === 'sd' ? s.sd : s.sem)), 1);
+
+  MONTHS.forEach((mo, i) => {
+    const { mean, sd, sem, n } = monthStats[i];
+    const err    = _errMode === 'sd' ? sd : sem;
+    const hasErr = n >= 2;
+
+    const wMean  = Math.min(mean         / maxVal * 100, 100);
+    const wHigh  = Math.min((mean + err) / maxVal * 100, 100);
+
+    // Color: amber for production bars (not coverage-based colouring)
+    const col = 'var(--prod)';
+
+    // Upper error bar only: vertical bar at wHigh% + top cap
+    const errHtml = hasErr ? `
+      <div class="month-error-bar" style="left:${wHigh}%;top:1px;bottom:1px;"></div>
+      <div class="month-error-cap" style="left:${wHigh}%;top:50%;margin-top:-1px;"></div>` : '';
+
+    const n1Label = (!hasErr && n === 1)
+      ? `<span style="font-size:9px;color:var(--muted);margin-left:4px;opacity:0.6;">n=1</span>`
+      : '';
+    const row = document.createElement('div');
+    row.className = 'month-row';
+    row.innerHTML = `
+      <div class="month-name">${mo}</div>
+      <div class="month-bar-track">
+        <div class="month-bar-fill" style="width:${wMean}%;background:${col}"></div>
+        ${errHtml}
+      </div>
+      <div class="month-pct">${(mean/1000).toFixed(2)}${n1Label}</div>`;
+    barsEl.appendChild(row);
+  });
+}
+
+// ── BOOT ──────────────────────────────────────────────────────────────────────
+// ── SETTINGS PAGE ────────────────────────────────────────────────────────────
+async function renderSettings() {
+  const main = document.getElementById('main');
+  main.innerHTML = '<div class="settings-page"><button class="settings-back" id="settings-back">← BACK TO DASHBOARD</button><div id="settings-content"><div style="color:var(--muted);font-size:12px;">Loading…</div></div><div style="position:sticky;bottom:0;background:var(--bg3);border-top:1px solid var(--border);padding:10px 0;margin-top:24px;"><button class="settings-back" id="settings-back-bottom" style="padding:0;">← BACK TO DASHBOARD</button></div></div>';
+  document.getElementById('settings-back').addEventListener('click', () => loadDashboard());
+  document.getElementById('settings-back-bottom').addEventListener('click', () => loadDashboard());
+
+  const sc = document.getElementById('settings-content');
+
+  // Fetch all settings data in parallel
+  const [sysRes, lastRes, diagRes, backupRes, conflictsRes] = await Promise.all([
+    fetch('/api/settings').then(r => r.json()).catch(() => ({})),
+    fetch('/api/import/last').then(r => r.json()).catch(() => ({})),
+    fetch('/api/diagnostics').then(r => r.json()).catch(() => ({})),
+    fetch('/api/backup/status').then(r => r.json()).catch(() => ({})),
+    fetch('/api/conflicts').then(r => r.json()).catch(() => []),
+  ]);
+
+  const fmtDate = s => s ? s.replace('T',' ').substring(0,19) : '—';
+  const fmtSize = b => b > 1024*1024 ? (b/(1024*1024)).toFixed(2)+' MB' : (b/1024).toFixed(1)+' KB';
+
+  sc.innerHTML = `
+    <!-- Row 1: two-column grid — System + Last Import -->
+    <div class="settings-grid">
+      <div class="settings-section">
+        <div class="settings-section-title">// SYSTEM</div>
+        <div class="settings-row"><span class="settings-row-label">BE Version</span><span class="settings-row-value">${sysRes.be_version||'—'}</span></div>
+        <div class="settings-row"><span class="settings-row-label">FE Version</span><span class="settings-row-value">${sysRes.fe_version||'—'}</span></div>
+        <div class="settings-row"><span class="settings-row-label">Database</span><span class="settings-row-value">${sysRes.db_path||'—'}</span></div>
+        <div class="settings-row"><span class="settings-row-label">DB Size</span><span class="settings-row-value">${sysRes.db_size_bytes ? fmtSize(sysRes.db_size_bytes) : '—'}</span></div>
+        <div class="settings-row"><span class="settings-row-label">Records</span><span class="settings-row-value">${sysRes.record_count||'0'} days</span></div>
+        <div class="settings-row"><span class="settings-row-label">Date Range</span><span class="settings-row-value">${sysRes.first_date||'—'} → ${sysRes.last_date||'—'}</span></div>
+        <div class="settings-row"><span class="settings-row-label">Conflicts</span><span class="settings-row-value ${(sysRes.conflict_count||0)>0?'err':''}">${sysRes.conflict_count||0} unreviewed</span></div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-section-title">// LAST IMPORT</div>
+        ${Object.keys(lastRes).length === 0
+          ? '<div style="color:var(--muted);font-size:14px;">No import recorded this session</div>'
+          : `<div class="settings-row"><span class="settings-row-label">Timestamp</span><span class="settings-row-value">${fmtDate(lastRes.timestamp)}</span></div>
+             <div class="settings-row"><span class="settings-row-label">Inserted</span><span class="settings-row-value ok">${lastRes.inserted}</span></div>
+             <div class="settings-row"><span class="settings-row-label">Updated</span><span class="settings-row-value">${lastRes.updated}</span></div>
+             <div class="settings-row"><span class="settings-row-label">Skipped</span><span class="settings-row-value">${lastRes.skipped}</span></div>
+             <div class="settings-row"><span class="settings-row-label">Source</span><span class="settings-row-value ${lastRes.data_source==='interval'?'ok':''}">${lastRes.data_source||'daily'}</span></div>
+             <div class="settings-row"><span class="settings-row-label">Conflicts</span><span class="settings-row-value ${(lastRes.conflicts_logged||0)>0?'err':''}">${lastRes.conflicts_logged||0}</span></div>
+             <div class="settings-row"><span class="settings-row-label">Files</span><span class="settings-row-value">${[lastRes.files?.prod, lastRes.files?.cons, lastRes.files?.ev, lastRes.files?.interval].filter(Boolean).join(', ')||'—'}</span></div>`
+        }
+      </div>
+    </div>
+
+    <!-- Row 2: two-column grid — Backup & Restore + Theme -->
+    <div class="settings-grid">
+      <div class="settings-section">
+        <div class="settings-section-title">// BACKUP & RESTORE</div>
+        <div class="settings-row"><span class="settings-row-label">Backup Dir</span><span class="settings-row-value ${diagRes.backup_dir_ok ? 'ok' : 'err'}">${diagRes.backup_dir_ok ? '✓ mounted' : '✗ not mounted'}</span></div>
+        <div class="settings-row"><span class="settings-row-label">Last Daily</span><span class="settings-row-value">${fmtDate(backupRes.last_daily)}</span></div>
+        <div class="settings-row"><span class="settings-row-label">Last Weekly</span><span class="settings-row-value">${fmtDate(backupRes.last_weekly)}</span></div>
+        <div class="settings-row"><span class="settings-row-label">Daily / Weekly</span><span class="settings-row-value">${backupRes.daily_count||0} / ${backupRes.weekly_count||0} files</span></div>
+        ${backupRes.last_error ? `<div class="settings-row"><span class="settings-row-label">Last Error</span><span class="settings-row-value err">${backupRes.last_error}</span></div>` : ''}
+        <div class="settings-actions">
+          <a class="import-btn" href="/api/backup" download style="text-decoration:none;">⬇ DOWNLOAD BACKUP</a>
+          <button class="import-btn" id="settings-open-restore">⬆ RESTORE FROM BACKUP</button>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-section-title">// SYSTEM SETUP</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:14px;">Configuration saved during onboarding. Edit and save to update.</div>
+        <div class="settings-row"><span class="settings-row-label">Port</span><span class="settings-row-value">${sysRes.setup?.port||'9521'}</span></div>
+        <div class="settings-row"><span class="settings-row-label">Data Type</span><span class="settings-row-value">${sysRes.setup?.data_type||'—'}</span></div>
+        <div class="settings-row"><span class="settings-row-label">EV Tracking</span><span class="settings-row-value">${sysRes.setup?.has_ev||'—'}</span></div>
+        <div class="settings-row"><span class="settings-row-label">Battery</span><span class="settings-row-value">${sysRes.setup?.has_battery||'—'}</span></div>
+        <div class="settings-row"><span class="settings-row-label">Timezone</span><span class="settings-row-value">${sysRes.setup?.timezone||'—'}</span></div>
+        <div class="settings-row"><span class="settings-row-label">Install Date</span><span class="settings-row-value">${sysRes.setup?.cons_start||'not set'}</span></div>
+        <div class="settings-row"><span class="settings-row-label">Grid Export Date</span><span class="settings-row-value">${sysRes.setup?.prod_start||'not set'}</span></div>
+        <div class="settings-row"><span class="settings-row-label">Display Start</span><span class="settings-row-value">${sysRes.setup?.net_start||'not set'}</span></div>
+        <div class="settings-actions" style="margin-top:12px;">
+          <button class="import-btn" id="settings-rerun-wizard">⚙ RE-RUN SETUP WIZARD</button>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-section-title">// THEME</div>
+        <div style="display:flex;gap:10px;padding-top:4px;flex-wrap:wrap;">
+          <button class="import-btn theme-btn-settings" data-mode="light">☀ LIGHT</button>
+          <button class="import-btn theme-btn-settings" data-mode="system">⊙ SYSTEM</button>
+          <button class="import-btn theme-btn-settings" data-mode="dark">☾ DARK</button>
+        </div>
+        <div class="settings-section-title" style="margin-top:24px;">// DIAGNOSTICS</div>
+        <div class="settings-row"><span class="settings-row-label">DB Reachable</span><span class="settings-row-value ${diagRes.db_reachable ? 'ok' : 'err'}">${diagRes.db_reachable ? 'OK' : 'FAIL'}</span></div>
+        <div class="settings-row"><span class="settings-row-label">Backup Dir</span><span class="settings-row-value ${diagRes.backup_dir_ok ? 'ok' : 'err'}">${diagRes.backup_dir_ok ? 'OK' : 'NOT MOUNTED'}</span></div>
+        <div class="settings-actions">
+          <button class="import-btn" id="run-diagnostics">▶ RUN ACTIVE CHECK</button>
+        </div>
+        <div class="diag-result" id="diag-result"></div>
+      </div>
+    </div>
+
+    <!-- Row 2b: full-width — Dashboard Sections -->
+    <div class="settings-section" style="margin-bottom:16px;">
+      <div class="settings-section-title">// DASHBOARD SECTIONS</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">Drag ⠿ to reorder. Checkbox to show/hide.</div>
+      <div id="section-drag-list" style="display:flex;flex-direction:column;gap:4px;">
+        ${_getSectionOrder().map(key => {
+          const s = SECTIONS.find(x => x.key === key);
+          if (!s) return '';
+          const unavailable = s.requiresInterval && !window._hasInterval;
+          const vis = _sectionVisible(key) && !unavailable;
+          return '<div data-drag-key="' + key + '" draggable="true" style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:5px;cursor:default;user-select:none;">' +
+            '<span style="cursor:grab;font-size:16px;color:var(--muted);line-height:1;" title="Drag to reorder">⠿</span>' +
+            '<input type="checkbox" data-section="' + key + '" ' + (vis ? 'checked' : '') + (unavailable ? ' disabled' : '') + ' style="width:15px;height:15px;accent-color:var(--prod);cursor:pointer;">' +
+            '<span style="font-size:13px;color:' + (unavailable ? 'var(--muted)' : 'var(--text)') + ';">' + s.label + (unavailable ? ' <span style="font-size:10px;">(no interval data)</span>' : '') + '</span>' +
+            '<span style="margin-left:auto;font-size:10px;color:var(--muted);">' + (s.half ? 'half-width' : 'full-width') + '</span>' +
+            '</div>';
+        }).join('')}
+      </div>
+      <div class="settings-actions" style="margin-top:16px;">
+        <button class="import-btn" id="save-sections" style="border-color:var(--prod);color:var(--prod);">SAVE &amp; RELOAD</button>
+        <button class="import-btn" id="reset-sections">RESET TO DEFAULT</button>
+      </div>
+    </div>
+
+    <!-- Row 3: full-width — Conflicts -->
+    <div class="settings-section">
+      <div class="settings-section-title">// IMPORT CONFLICT REPORT</div>
+      <div id="conflicts-content"><div style="color:var(--muted);font-size:14px;">Loading…</div></div>
+    </div>`;
+
+  // Render conflicts table
+  const conflictsEl = document.getElementById('conflicts-content');
+  if (conflictsEl) {
+    const unreviewed = Array.isArray(conflictsRes) ? conflictsRes.filter(c => !c.reviewed) : [];
+    const all        = Array.isArray(conflictsRes) ? conflictsRes : [];
+    if (all.length === 0) {
+      conflictsEl.innerHTML = '<div style="color:var(--muted);font-size:14px;">No conflicts detected</div>';
+    } else {
+      // Group conflicts by year
+      const byYear = {};
+      all.forEach(c => {
+        const yr = c.date.slice(0,4);
+        if (!byYear[yr]) byYear[yr] = [];
+        byYear[yr].push(c);
+      });
+
+      // Global bias note across all unreviewed
+      let globalBias = '';
+      if (unreviewed.length > 1) {
+        const dirs = [...new Set(unreviewed.map(c => c.direction))];
+        if (dirs.length === 1) {
+          const dir = dirs[0];
+          const label = dir === 'DAILY LOW' ? 'interval data consistently reports higher production' : 'daily data consistently reports higher production';
+          globalBias = '<div style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:10px 14px;margin-bottom:12px;font-size:13px;color:var(--muted);">ⓘ All ' + unreviewed.length + ' conflicts are <strong style="color:var(--text)">' + dir + '</strong> — ' + label + '. This is typically a known daily CSV rounding artifact when compared against interval data.</div>';
+        }
+      }
+
+      const CTBL = 'display:grid;grid-template-columns:100px 60px 1fr 130px 140px;gap:0 16px;align-items:center;padding:8px 4px;font-size:13px;font-family:"Share Tech Mono",monospace;';
+      const CHDR = CTBL + 'border-bottom:1px solid var(--border);font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;padding-bottom:8px;margin-bottom:2px;';
+
+      let yearGroupsHtml = '';
+      Object.keys(byYear).sort().reverse().forEach(yr => {
+        const yrConflicts  = byYear[yr];
+        const yrUnreviewed = yrConflicts.filter(c => !c.reviewed).length;
+        const yrDirs  = [...new Set(yrConflicts.map(c => c.direction))];
+        const yrBias  = yrDirs.length === 1 ? ' — all ' + yrDirs[0] : '';
+        const yrLabel = yr + ' · ' + yrConflicts.length + ' conflict' + (yrConflicts.length > 1 ? 's' : '') + (yrUnreviewed ? ' · ' + yrUnreviewed + ' unreviewed' : ' · all reviewed') + yrBias;
+
+        const rows = yrConflicts.map(c => {
+          const dir      = c.direction === 'DAILY HIGH' ? '<span style="color:var(--deficit)">▲ DAILY HIGH</span>' : '<span style="color:var(--surplus)">▼ DAILY LOW</span>';
+          const reviewed = c.reviewed ? ' <span style="color:var(--muted);font-size:11px;">✓</span>' : '';
+          return '<div style="' + CTBL + (c.reviewed ? 'opacity:0.5;' : '') + '">' +
+            '<span style="color:var(--text)">' + c.date + '</span>' +
+            '<span style="color:var(--muted)">' + (c.field === 'prod_kwh' ? 'PROD' : 'CONS') + '</span>' +
+            '<span style="color:var(--text)">' + c.daily_val.toFixed(2) + ' → ' + c.interval_val.toFixed(2) + ' kWh</span>' +
+            '<span>' + dir + reviewed + '</span>' +
+            '<span style="color:var(--muted)">' + c.abs_diff.toFixed(2) + ' kWh / ' + c.pct_diff.toFixed(1) + '%</span></div>';
+        }).join('');
+
+        yearGroupsHtml +=
+          '<details style="margin-bottom:8px;border:1px solid var(--border);border-radius:6px;overflow:hidden;">' +
+          '<summary style="padding:10px 14px;cursor:pointer;font-size:13px;font-family:monospace;color:var(--text);background:var(--bg2);list-style:none;display:flex;justify-content:space-between;">' +
+          '<span>' + yrLabel + '</span>' +
+          '<span style="color:var(--muted);font-size:11px;">▼</span></summary>' +
+          '<div style="padding:8px 14px;">' +
+          '<div style="' + CHDR + '"><span>Date</span><span>Field</span><span>Daily → Interval</span><span>Direction</span><span>Difference</span></div>' +
+          rows + '</div></details>';
+      });
+
+      conflictsEl.innerHTML =
+        '<div style="font-size:14px;color:var(--muted);margin-bottom:12px;">' + unreviewed.length + ' unreviewed of ' + all.length + ' total</div>' +
+        globalBias +
+        yearGroupsHtml +
+        (unreviewed.length > 0 ? '<div class="settings-actions"><button class="import-btn" id="mark-all-reviewed">✓ MARK ALL REVIEWED</button></div>' : '');
+    }
+  }
+
+  // Wire mark-all-reviewed
+  const markBtn = document.getElementById('mark-all-reviewed');
+  if (markBtn) {
+    markBtn.addEventListener('click', async () => {
+      const ids = (Array.isArray(conflictsRes) ? conflictsRes : [])
+        .filter(c => !c.reviewed).map(c => c.id);
+      if (!ids.length) return;
+      await fetch('/api/conflicts/review', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ids}),
+      });
+      renderSettings();
+    });
+  }
+
+  // Wire section selector — drag-to-reorder + checkbox visibility
+  const saveBtn  = document.getElementById('save-sections');
+  const resetBtn = document.getElementById('reset-sections');
+  const dragList = document.getElementById('section-drag-list');
+
+  // Drag-and-drop reorder
+  if (dragList) {
+    let _dragSrc = null;
+    dragList.querySelectorAll('[data-drag-key]').forEach(row => {
+      row.addEventListener('dragstart', e => {
+        _dragSrc = row;
+        setTimeout(() => row.style.opacity = '0.4', 0);
+        e.dataTransfer.effectAllowed = 'move';
+      });
+      row.addEventListener('dragend', () => { row.style.opacity = '1'; });
+      row.addEventListener('dragover', e => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        const rect = row.getBoundingClientRect();
+        const after = e.clientY > rect.top + rect.height / 2;
+        dragList.querySelectorAll('[data-drag-key]').forEach(r => r.style.borderTop = r.style.borderBottom = '');
+        if (after) row.style.borderBottom = '2px solid var(--prod)';
+        else        row.style.borderTop    = '2px solid var(--prod)';
+      });
+      row.addEventListener('dragleave', () => {
+        row.style.borderTop = row.style.borderBottom = '';
+      });
+      row.addEventListener('drop', e => {
+        e.preventDefault();
+        row.style.borderTop = row.style.borderBottom = '';
+        if (!_dragSrc || _dragSrc === row) return;
+        const rect = row.getBoundingClientRect();
+        const after = e.clientY > rect.top + rect.height / 2;
+        if (after) row.after(_dragSrc);
+        else       row.before(_dragSrc);
+      });
+    });
+  }
+
+  if (saveBtn) {
+    saveBtn.addEventListener('click', () => {
+      const visMap = {};
+      document.querySelectorAll('[data-section]').forEach(cb => {
+        visMap[cb.dataset.section] = cb.checked;
+      });
+      const order = [...document.querySelectorAll('[data-drag-key]')].map(r => r.dataset.dragKey);
+      _savePrefs(visMap, order);
+      loadDashboard();
+    });
+  }
+  if (resetBtn) {
+    resetBtn.addEventListener('click', () => {
+      localStorage.removeItem(PREFS_KEY);
+      renderSettings();
+    });
+  }
+
+  // Wire restore button
+  document.getElementById('settings-open-restore').addEventListener('click', () => {
+    restoreOverlay.classList.add('open');
+  });
+
+  // Wire re-run setup wizard button
+  document.getElementById('settings-rerun-wizard').addEventListener('click', async () => {
+    // Clear setup_complete so wizard shows fresh, but preserve existing values as defaults
+    await fetch('/api/setup', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({setup_complete: null}),
+    }).catch(() => {});
+    // Pre-populate _wizData from current saved settings so fields aren't blank
+    const current = await fetch('/api/setup').then(r => r.json()).catch(() => ({}));
+    _wizData = {...(current.settings || {})};
+    delete _wizData.setup_complete;
+    _renderWizard('welcome');
+  });
+
+  // Wire theme buttons in settings
+  sc.querySelectorAll('.theme-btn-settings').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const mode = btn.dataset.mode;
+      localStorage.setItem(THEME_KEY, mode);
+      applyTheme(mode);
+    });
+  });
+
+  // Wire diagnostics run
+  document.getElementById('run-diagnostics').addEventListener('click', async () => {
+    const btn = document.getElementById('run-diagnostics');
+    const out = document.getElementById('diag-result');
+    btn.disabled = true;
+    btn.textContent = 'RUNNING…';
+    try {
+      const r = await fetch('/api/diagnostics/run').then(res => res.json());
+      out.innerHTML = [
+        `DB write:     ${r.db_write_ok     ? '✓ OK' : '✗ ' + (r.db_write_error||'FAIL')}`,
+        `Backup write: ${r.backup_write_ok ? '✓ OK' : '✗ ' + (r.backup_write_error||'FAIL')}`,
+        `Timestamp:    ${fmtDate(r.timestamp)}`,
+      ].join('<br>');
+      out.classList.add('visible');
+    } catch(e) {
+      out.innerHTML = '✗ Request failed';
+      out.classList.add('visible');
+    }
+    btn.disabled = false;
+    btn.textContent = '▶ RUN ACTIVE CHECK';
+  });
+}
+
+document.getElementById('open-settings').addEventListener('click', () => renderSettings());
+document.getElementById('open-dashboard').addEventListener('click', () => loadDashboard());
+
+// ── SOLAR FINGERPRINT ────────────────────────────────────────────────────────
+
+// Seasonal definitions and colors
+const SF_SEASONS = {
+  'Winter': { months:[12,1,2],  color:'#60a5fa', dates:'Dec–Feb' },
+  'Spring': { months:[3,4,5],   color:'#4ade80', dates:'Mar–May' },
+  'Summer': { months:[6,7,8],   color:'#f59e0b', dates:'Jun–Aug' },
+  'Fall':   { months:[9,10,11], color:'#f97316', dates:'Sep–Nov' },
+};
+
+let _sfYear       = null;
+let _sfChart      = null;
+let _sfYears      = [];
+let _sfShowAll    = false;   // show all years vs selected year
+let _sfShowSeasons = true;    // show seasonal average lines
+let _sfDSTOff      = false;   // remove DST shift (shift summer hours back 1h to solar time)
+
+async function renderSolarFingerprint(daily) {
+  const main = document.getElementById('main');
+  _sfYears = [...new Set(daily.map(r => r.date.slice(0,4)))].sort();
+  if (!_sfYear || !_sfYears.includes(_sfYear)) _sfYear = _sfYears[_sfYears.length - 1];
+
+  let sec = document.getElementById('solar-section');
+  if (!sec) { sec = document.createElement('div'); sec.id = 'solar-section'; main.appendChild(sec); }
+  sec.innerHTML = '';
+
+  // ── Section label
+  const lbl = document.createElement('div');
+  lbl.className = 'section-label';
+  lbl.textContent = '// SOLAR PRODUCTION FINGERPRINT';
+  sec.appendChild(lbl);
+
+  // ── Panel
+  const panel = document.createElement('div');
+  panel.className = 'panel';
+
+  // ── Panel header
+  const hdr = document.createElement('div');
+  hdr.className = 'panel-header';
+  hdr.style.cssText = 'flex-direction:column;align-items:flex-start;gap:8px;';
+
+  // Title row
+  const titleRow = document.createElement('div');
+  titleRow.style.cssText = 'display:flex;justify-content:space-between;width:100%;align-items:center;flex-wrap:wrap;gap:8px;';
+  const title = document.createElement('div');
+  title.className = 'panel-title';
+  title.textContent = 'Daily Production Curves — Every Day of the Year';
+  titleRow.appendChild(title);
+
+  // Legend
+  const leg = document.createElement('div');
+  leg.style.cssText = 'display:flex;gap:12px;flex-wrap:wrap;align-items:center;';
+  // Legend hidden from header — drawn as chart overlay instead
+  titleRow.appendChild(leg);
+  hdr.appendChild(titleRow);
+
+  // Controls row
+  const ctrlRow = document.createElement('div');
+  ctrlRow.style.cssText = 'display:flex;gap:14px;flex-wrap:wrap;align-items:center;';
+
+  // Year toggle
+  const yrGroup = document.createElement('div');
+  yrGroup.className = 'toggle-group';
+  const yrLbl = document.createElement('span');
+  yrLbl.className = 'toggle-group-label';
+  yrLbl.textContent = 'YEAR';
+  yrGroup.appendChild(yrLbl);
+  // ALL button
+  const allBtn = document.createElement('button');
+  allBtn.className = 'tog' + (_sfShowAll ? ' active' : '');
+  allBtn.dataset.sfyear = 'ALL';
+  allBtn.textContent = 'ALL';
+  yrGroup.appendChild(allBtn);
+
+  _sfYears.forEach(y => {
+    const btn = document.createElement('button');
+    btn.className = 'tog' + (!_sfShowAll && y === _sfYear ? ' active' : '');
+    btn.dataset.sfyear = y;
+    btn.textContent = y;
+    yrGroup.appendChild(btn);
+  });
+  ctrlRow.appendChild(yrGroup);
+
+  // AVG toggle
+  const seasGroup = document.createElement('div');
+  seasGroup.className = 'toggle-group';
+  const seasLbl = document.createElement('span');
+  seasLbl.className = 'toggle-group-label';
+  seasLbl.textContent = 'AVG';
+  seasGroup.appendChild(seasLbl);
+  const sfSeasOn = document.createElement('button');
+  sfSeasOn.className = 'tog' + (_sfShowSeasons ? ' active' : '');
+  sfSeasOn.id = 'sf-seas-on';
+  sfSeasOn.textContent = 'ON';
+  const sfSeasOff = document.createElement('button');
+  sfSeasOff.className = 'tog' + (!_sfShowSeasons ? ' active' : '');
+  sfSeasOff.id = 'sf-seas-off';
+  sfSeasOff.textContent = 'OFF';
+  seasGroup.appendChild(sfSeasOn);
+  seasGroup.appendChild(sfSeasOff);
+  ctrlRow.appendChild(seasGroup);
+
+  // DST toggle
+  const dstGroup = document.createElement('div');
+  dstGroup.className = 'toggle-group';
+  const dstLbl = document.createElement('span');
+  dstLbl.className = 'toggle-group-label';
+  dstLbl.textContent = 'DST';
+  dstGroup.appendChild(dstLbl);
+  const sfDstOn = document.createElement('button');
+  sfDstOn.className = 'tog' + (!_sfDSTOff ? ' active' : '');
+  sfDstOn.id = 'sf-dst-on';
+  sfDstOn.textContent = 'ON';
+  const sfDstOff = document.createElement('button');
+  sfDstOff.className = 'tog' + (_sfDSTOff ? ' active' : '');
+  sfDstOff.id = 'sf-dst-off';
+  sfDstOff.textContent = 'OFF';
+  dstGroup.appendChild(sfDstOn);
+  dstGroup.appendChild(sfDstOff);
+  ctrlRow.appendChild(dstGroup);
+
+  hdr.appendChild(ctrlRow);
+
+
+  panel.appendChild(hdr);
+
+  // Canvas
+  const wrap = document.createElement('div');
+  wrap.className = 'chart-wrap';
+  wrap.style.height = '380px';
+  const canvas = document.createElement('canvas');
+  canvas.id = 'solar-canvas';
+  wrap.appendChild(canvas);
+  panel.appendChild(wrap);
+  sec.appendChild(panel);
+
+  // Wire toggles
+  sec.querySelectorAll('[data-sfyear]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (btn.dataset.sfyear === 'ALL') {
+        _sfShowAll = true;
+      } else {
+        _sfShowAll = false;
+        _sfYear = btn.dataset.sfyear;
+      }
+      _loadSolarFingerprint(sec, daily);
+    });
+  });
+  sec.querySelector('#sf-seas-on').addEventListener('click',  () => { _sfShowSeasons = true;  _loadSolarFingerprint(sec, daily); });
+  sec.querySelector('#sf-seas-off').addEventListener('click', () => { _sfShowSeasons = false; _loadSolarFingerprint(sec, daily); });
+  sec.querySelector('#sf-dst-on').addEventListener('click',   () => { _sfDSTOff = false; _loadSolarFingerprint(sec, daily); });
+  sec.querySelector('#sf-dst-off').addEventListener('click',  () => { _sfDSTOff = true;  _loadSolarFingerprint(sec, daily); });
+
+  await _loadSolarFingerprint(sec, daily);
+}
+
+async function _loadSolarFingerprint(sec, daily) {
+  sec.querySelectorAll('[data-sfyear]').forEach(b => {
+    if (b.dataset.sfyear === 'ALL') b.classList.toggle('active', _sfShowAll);
+    else b.classList.toggle('active', !_sfShowAll && b.dataset.sfyear === _sfYear);
+  });
+
+
+  sec.querySelector('#sf-seas-on')?.classList.toggle('active',  _sfShowSeasons);
+  sec.querySelector('#sf-seas-off')?.classList.toggle('active', !_sfShowSeasons);
+
+  const sfUrl = _sfShowAll ? '/api/solar-fingerprint' : '/api/solar-fingerprint?year=' + _sfYear;
+  const curves = await fetch(sfUrl).then(r=>r.json()).catch(()=>[]);
+  if (_sfChart) { _sfChart.destroy(); _sfChart = null; }
+
+  const { color } = chartDefaults();
+  const tt = tooltipStyle();
+  const gridCol = 'rgba(128,128,128,0.12)';  // light grid for fingerprint
+
+  // curves already filtered by API (all years or single year)
+  const visibleCurves = curves;
+
+  // Seasonal averages
+  const seasonSlots = {};
+  Object.keys(SF_SEASONS).forEach(s => { seasonSlots[s] = {}; });
+  visibleCurves.forEach(day => {
+    const month = parseInt(day.date.slice(5,7));
+    const season = Object.entries(SF_SEASONS).find(([,s]) => s.months.includes(month))?.[0];
+    if (!season) return;
+    const shift = (_sfDSTOff && _isDST(day.date)) ? -1 : 0;
+    day.points.forEach(p => {
+      const key = String(p.x + shift);
+      if (!seasonSlots[season][key]) seasonSlots[season][key] = [];
+      seasonSlots[season][key].push(p.w);
+    });
+  });
+  const seasonAvgs = {};
+  Object.entries(seasonSlots).forEach(([season, slots]) => {
+    seasonAvgs[season] = Object.entries(slots)
+      .map(([x, vals]) => ({x: parseFloat(x), y: vals.reduce((a,b)=>a+b,0)/vals.length}))
+      .sort((a,b) => a.x - b.x);
+  });
+
+  // DST helper — true if date falls in US Eastern DST (2nd Sun Mar → 1st Sun Nov)
+  // Note: the DST offset toggle uses US Eastern rules. If your system is in a
+  // different timezone, disable this toggle or the hour alignment will be incorrect.
+  function _isDST(dateStr) {
+    const d   = new Date(dateStr + 'T12:00:00');
+    const yr  = d.getFullYear();
+    const mar = new Date(yr, 2, 1);
+    const nov = new Date(yr, 10, 1);
+    const dstStart = new Date(yr, 2, 8  + (7 - mar.getDay()) % 7);
+    const dstEnd   = new Date(yr, 10, 1 + (7 - nov.getDay()) % 7);
+    return d >= dstStart && d < dstEnd;
+  }
+
+  // Datasets
+  const datasets = [];
+  const isLight     = document.documentElement.getAttribute('data-theme') === 'light';
+  const baseOpacity  = isLight ? 0.18 : 0.10;
+  const dayOpacity   = Math.max(0.05, Math.min(isLight ? 0.25 : 0.16, baseOpacity / Math.sqrt(visibleCurves.length / 100)));
+  visibleCurves.forEach(day => {
+    const shift = (_sfDSTOff && _isDST(day.date)) ? -1 : 0;
+    let pts = day.points.map(p => ({x: p.x + shift, y: p.w}));
+    const alpha = dayOpacity.toFixed(3);
+    datasets.push({ label: day.date, data: pts, borderColor: 'rgba(245,158,11,' + alpha + ')',
+      backgroundColor: 'transparent', borderWidth: 0.7, pointRadius: 0, tension: 0.3, parsing: false });
+  });
+  if (_sfShowSeasons) {
+    Object.entries(SF_SEASONS).forEach(([season, cfg]) => {
+      let pts = seasonAvgs[season] || [];
+      if (!pts.length) return;
+      datasets.push({ label: season, data: pts, borderColor: cfg.color,
+        backgroundColor: 'transparent', borderWidth: 1.2, pointRadius: 0, tension: 0.4, parsing: false });
+    });
+  }
+
+  const ctx = sec.querySelector('#solar-canvas')?.getContext('2d');
+  if (!ctx) return;
+
+  const yLabel    = 'Watts';
+  const mono      = "'Share Tech Mono',monospace";
+  const yCallback = v => v >= 1000 ? (v/1000).toFixed(1)+'k' : String(v);
+
+  // Custom plugin: vertical legend in top-right of plot area
+  const sfLegendPlugin = {
+    id: 'sfLegend',
+    afterDraw(chart) {
+      const { ctx, chartArea: { right, top } } = chart;
+      const entries = [
+        ...Object.entries(SF_SEASONS).map(([label, s]) => ({ color: s.color, text: label + '  ' + s.dates })),
+        { color: 'rgba(245,158,11,0.35)', text: 'each day' },
+      ];
+      const lineH = 16, padR = 12, padT = 10;
+      const font = "11px 'Share Tech Mono',monospace";
+      ctx.save();
+      ctx.font = font;
+      const maxW = Math.max(...entries.map(e => ctx.measureText('— ' + e.text).width));
+      entries.forEach((e, i) => {
+        const x = right - maxW - padR;
+        const y = top + padT + i * lineH;
+        ctx.fillStyle = e.color;
+        ctx.fillText('— ' + e.text, x, y);
+      });
+      ctx.restore();
+    }
+  };
+
+  _sfChart = new Chart(ctx, {
+    type: 'line', plugins: [sfLegendPlugin], data: { datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false, animation: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { ...tt,
+          filter: item => Object.keys(SF_SEASONS).includes(item.dataset.label),
+          callbacks: {
+            title: items => items[0]?.dataset.label || '',
+            label: item => item.parsed.y.toFixed(0) + ' W',
+          }
+        },
+      },
+      scales: {
+        x: { type: 'linear', min: 3, max: 21,
+          ticks: { color, font: { family: mono, size: 11 },
+            callback: v => v % 3 === 0 ? String(v).padStart(2,'0') + ':00' : '', stepSize: 3 },
+          grid: { color: gridCol, tickLength: 0 }, border: { color: gridCol } },
+        y: { min: 0,
+          ticks: { color, font: { family: mono, size: 11 }, callback: yCallback },
+          grid: { color: gridCol }, border: { color: gridCol },
+          title: { display: true, text: yLabel, color, font: { family: mono, size: 11 } } },
+      },
+    },
+  });
+}
+
+// ── DAY-OF-WEEK CONSUMPTION (standalone) ─────────────────────────────────────
+
+let _dowSeason  = 'All';
+let _dowErrMode = 'sd';
+let _dowEV      = 'all';
+
+async function renderDOW(hasEV) {
+  const main = document.getElementById('main');
+  let sec = document.getElementById('dow-section');
+  if (!sec) { sec = document.createElement('div'); sec.id = 'dow-section'; main.appendChild(sec); }
+  sec.innerHTML = '';
+
+  const lbl = document.createElement('div');
+  lbl.className = 'section-label';
+  lbl.textContent = '// DAY-OF-WEEK CONSUMPTION';
+  sec.appendChild(lbl);
+
+  const panel = document.createElement('div');
+  panel.className = 'panel';
+
+  const hdr = document.createElement('div');
+  hdr.className = 'panel-header';
+  hdr.style.cssText = 'flex-direction:column;align-items:flex-start;gap:8px;';
+
+  const titleRow = document.createElement('div');
+  titleRow.style.cssText = 'display:flex;justify-content:space-between;width:100%;align-items:center;flex-wrap:wrap;gap:8px;';
+  const title = document.createElement('div');
+  title.className = 'panel-title';
+  title.textContent = 'Day-of-Week Consumption';
+  const leg = document.createElement('div');
+  leg.className = 'legend';
+  leg.innerHTML = '<span class="legend-item"><span class="legend-dot" style="background:var(--cons)"></span>Each day</span>' +
+    '<span class="legend-item"><span class="legend-dot" style="background:#f59e0b;border-radius:0;width:16px;height:3px;margin-top:5px;"></span>Mean</span>';
+  titleRow.appendChild(title);
+  titleRow.appendChild(leg);
+  hdr.appendChild(titleRow);
+
+  const ctrl = document.createElement('div');
+  ctrl.style.cssText = 'display:flex;gap:14px;flex-wrap:wrap;align-items:center;';
+
+  // Season toggle
+  const seasGrp = document.createElement('div'); seasGrp.className = 'toggle-group';
+  const seasLbl2 = document.createElement('span'); seasLbl2.className = 'toggle-group-label'; seasLbl2.textContent = 'SEASON';
+  seasGrp.appendChild(seasLbl2);
+  ['All','Winter','Spring','Summer','Fall'].forEach(s => {
+    const b = document.createElement('button');
+    b.className = 'tog' + (s === _dowSeason ? ' active' : '');
+    b.dataset.dowseason = s;
+    b.textContent = s.toUpperCase();
+    seasGrp.appendChild(b);
+  });
+  ctrl.appendChild(seasGrp);
+
+  // Error mode toggle
+  const errGrp = document.createElement('div'); errGrp.className = 'toggle-group';
+  const errLbl2 = document.createElement('span'); errLbl2.className = 'toggle-group-label'; errLbl2.textContent = 'ERROR';
+  errGrp.appendChild(errLbl2);
+  ['sd','sem'].forEach(m => {
+    const b = document.createElement('button');
+    b.className = 'tog' + (m === _dowErrMode ? ' active' : '');
+    b.dataset.dowerr = m;
+    b.textContent = m.toUpperCase();
+    errGrp.appendChild(b);
+  });
+  ctrl.appendChild(errGrp);
+
+  // EV toggle
+  if (hasEV) {
+    const evGrp = document.createElement('div'); evGrp.className = 'toggle-group';
+    const evLbl2 = document.createElement('span'); evLbl2.className = 'toggle-group-label'; evLbl2.textContent = 'EV';
+    evGrp.appendChild(evLbl2);
+    [['all','ALL'],['noev','EXCL EV']].forEach(([val, label]) => {
+      const b = document.createElement('button');
+      b.className = 'tog' + (_dowEV === val ? ' active' : '');
+      b.dataset.dowev = val;
+      b.textContent = label;
+      evGrp.appendChild(b);
+    });
+    ctrl.appendChild(evGrp);
+  }
+
+  hdr.appendChild(ctrl);
+  panel.appendChild(hdr);
+
+  const wrap = document.createElement('div');
+  wrap.className = 'chart-wrap';
+  wrap.style.height = '300px';
+  const canvas = document.createElement('canvas');
+  canvas.id = 'dow-canvas';
+  wrap.appendChild(canvas);
+  panel.appendChild(wrap);
+  sec.appendChild(panel);
+
+  sec.querySelectorAll('[data-dowseason]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      _dowSeason = btn.dataset.dowseason;
+      sec.querySelectorAll('[data-dowseason]').forEach(b => b.classList.toggle('active', b.dataset.dowseason === _dowSeason));
+      _refreshDOW(sec);
+    });
+  });
+  sec.querySelectorAll('[data-dowerr]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      _dowErrMode = btn.dataset.dowerr;
+      sec.querySelectorAll('[data-dowerr]').forEach(b => b.classList.toggle('active', b.dataset.dowerr === _dowErrMode));
+      _refreshDOW(sec);
+    });
+  });
+  sec.querySelectorAll('[data-dowev]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      _dowEV = btn.dataset.dowev;
+      sec.querySelectorAll('[data-dowev]').forEach(b => b.classList.toggle('active', b.dataset.dowev === _dowEV));
+      _refreshDOW(sec);
+    });
+  });
+
+  await _refreshDOW(sec);
+}
+
+async function _refreshDOW(sec) {
+  let q = '';
+  if (_dowSeason !== 'All') q += '?season=' + _dowSeason;
+  if (_dowEV === 'noev')   q += (q ? '&' : '?') + 'exclude_ev=true';
+
+  const dow = await fetch('/api/dow-profile' + q).then(r=>r.json()).catch(()=>[]);
+  if (!dow.length) return;
+
+  if (_dowChart) { _dowChart.destroy(); _dowChart = null; }
+
+  const { color, gridSoft } = chartDefaults();
+  const tt = tooltipStyle();
+  const EK = _dowErrMode;
+
+  const dotData = [], meanData = [];
+  dow.forEach((d,i) => {
+    meanData.push({x:i, y:d.avg_cons});
+    (d.days||[]).forEach(val => { dotData.push({x: i + (Math.random()-0.5)*0.5, y:val}); });
+  });
+  const maxYdow = Math.max(
+    ...meanData.map((m,i) => m.y + (dow[i]?.[EK==='sd'?'sd_cons':'sem_cons']||0)),
+    ...dotData.map(d => d.y)
+  ) * 1.08;
+
+  const datasets = [
+    { label:'Days', data:dotData, type:'scatter',
+      backgroundColor:'rgba(34,211,238,0.3)', borderColor:'rgba(34,211,238,0.5)',
+      pointRadius:3, pointHoverRadius:5 },
+    { label:'Mean', data:meanData, type:'scatter',
+      backgroundColor:'#f59e0b', borderColor:'#f59e0b',
+      pointStyle:'line', pointRadius:12, pointBorderWidth:3, pointHoverRadius:12,
+      _errs: dow.map(d=>d[EK==='sd'?'sd_cons':'sem_cons']||0), _errColor:'#f59e0b' },
+  ];
+
+  const ctx = sec.querySelector('#dow-canvas')?.getContext('2d');
+  if (!ctx) return;
+
+  _dowChart = new Chart(ctx, {
+    type:'scatter', plugins:[_errPlugin],
+    data:{ datasets },
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:{...tt, callbacks:{
+        label: c => c.dataset.label==='Mean'
+          ? 'Mean: ' + c.parsed.y.toFixed(2) + ' kWh'
+          : DOW_LBL[Math.round(c.parsed.x)] + ': ' + c.parsed.y.toFixed(2) + ' kWh',
+      }}},
+      scales:{
+        x:{ type:'linear', min:-0.5, max:6.5,
+            ticks:{color, font:{family:"'Share Tech Mono',monospace",size:11},
+                   callback:v=>DOW_LBL[Math.round(v)]||'', stepSize:1},
+            grid:{color:gridSoft}, border:{color:gridSoft} },
+        y:{ max:maxYdow,
+            ticks:{color, font:{family:"'Share Tech Mono',monospace",size:11},
+                   callback:v=>v.toFixed(1)+' kWh'},
+            grid:{color:gridSoft}, border:{color:gridSoft} },
+      }
+    }
+  });
+}
+
+// ── SELF-SUFFICIENCY HEATMAP (D-02) ─────────────────────────────────────────
+
+async function renderHeatmap() {
+  const main = document.getElementById('main');
+  const drQSum = _drFrom ? `?from_date=${_drFrom}` : '';
+
+  // Fetch heatmap data
+  const rows = await fetch(`/api/heatmap${drQSum}`).then(r=>r.json()).catch(()=>[]);
+  if (!rows.length) return;
+
+  // Build date→value lookup
+  const byDate = {};
+  rows.forEach(r => { byDate[r.date] = r; });
+
+  // Determine week grid: Sunday-aligned, 53 weeks max
+  const firstDate = new Date(rows[0].date + 'T00:00:00');
+  const lastDate  = new Date(rows[rows.length-1].date + 'T00:00:00');
+
+  // Start from the Sunday on or before first date
+  const gridStart = new Date(firstDate);
+  gridStart.setDate(gridStart.getDate() - gridStart.getDay());
+
+  // Color scale: deep red (large deficit) → neutral → deep green (large surplus)
+  // Range: -20 to +20 kWh, clamped
+  function netColor(net) {
+    if (net === null || net === undefined) return 'var(--bg3)';
+    const v = Math.max(-20, Math.min(20, net));
+    if (v >= 0) {
+      // surplus: 0→20 maps to neutral→green
+      const t = v / 20;
+      const r = Math.round(20 + (22-20)*(1-t));
+      const g = Math.round(30 + (163-30)*t);
+      const b = Math.round(30 + (74-30)*(1-t*0.7));
+      return `rgb(${Math.round(20*(1-t)+22*t)},${Math.round(30+133*t)},${Math.round(30+44*(1-t*0.5))})`;
+    } else {
+      // deficit: 0→-20 maps to neutral→red
+      const t = -v / 20;
+      return `rgb(${Math.round(20+219*t)},${Math.round(30+38*(1-t))},${Math.round(30+38*(1-t))})`;
+    }
+  }
+
+  // Build weeks array
+  const weeks = [];
+  let cur = new Date(gridStart);
+  while (cur <= lastDate || weeks.length < 1) {
+    const week = [];
+    for (let d = 0; d < 7; d++) {
+      const iso = cur.toISOString().slice(0,10);
+      week.push({ date: iso, data: byDate[iso] || null });
+      cur.setDate(cur.getDate()+1);
+    }
+    weeks.push(week);
+    if (cur > lastDate && weeks.length > 1) break;
+  }
+
+  // SVG dimensions
+  const CW = 13, CH = 13, GAP = 2;
+  const LEFT_PAD = 28, TOP_PAD = 24, BOTTOM_PAD = 36;
+  const W = weeks.length * (CW+GAP) + LEFT_PAD + 20;
+  const H = 7*(CH+GAP) + TOP_PAD + BOTTOM_PAD;
+
+  // Month labels
+  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const DOW_SHORT = ['S','M','T','W','T','F','S'];
+
+  let monthLabels = '';
+  let lastMonth = -1;
+  weeks.forEach((week, wi) => {
+    const firstDay = week.find(d => d.data || d.date >= rows[0].date);
+    if (!firstDay) return;
+    const m = parseInt(firstDay.date.slice(5,7)) - 1;
+    if (m !== lastMonth) {
+      const x = LEFT_PAD + wi*(CW+GAP);
+      monthLabels += `<text x="${x}" y="${TOP_PAD-6}" fill="var(--muted)" font-size="10" font-family="'Share Tech Mono',monospace">${MONTHS[m]}</text>`;
+      lastMonth = m;
+    }
+  });
+
+  // Day-of-week labels
+  let dowLabels = '';
+  [1,3,5].forEach(d => {
+    const y = TOP_PAD + d*(CH+GAP) + CH - 2;
+    dowLabels += `<text x="${LEFT_PAD-4}" y="${y}" fill="var(--muted)" font-size="10" font-family="'Share Tech Mono',monospace" text-anchor="end">${DOW_SHORT[d]}</text>`;
+  });
+
+  // Cells
+  let cells = '';
+  const tipData = {};
+  weeks.forEach((week, wi) => {
+    week.forEach((day, di) => {
+      const x = LEFT_PAD + wi*(CW+GAP);
+      const y = TOP_PAD + di*(CH+GAP);
+      const col = day.data ? netColor(day.data.net_kwh) : 'var(--bg3)';
+      const opacity = day.date < rows[0].date || day.date > rows[rows.length-1].date ? '0' : '1';
+      const id = `hc-${day.date.replace(/-/g,'')}`;
+      tipData[id] = day.data;
+      cells += `<rect id="${id}" x="${x}" y="${y}" width="${CW}" height="${CH}" rx="2" fill="${col}" opacity="${opacity}" style="cursor:${day.data?'pointer':'default'}" data-date="${day.date}"/>`;
+    });
+  });
+
+  // Legend
+  const LX = LEFT_PAD, LY = H - BOTTOM_PAD + 14;
+  let legend = `<text x="${LX}" y="${LY-2}" fill="var(--muted)" font-size="10" font-family="'Share Tech Mono',monospace">deficit</text>`;
+  const steps = 20;
+  for (let i = 0; i <= steps; i++) {
+    const net = -20 + i*2;
+    legend += `<rect x="${LX+52+i*10}" y="${LY-10}" width="10" height="10" rx="1" fill="${netColor(net)}"/>`;
+  }
+  legend += `<text x="${LX+52+(steps+1)*10+2}" y="${LY-2}" fill="var(--muted)" font-size="10" font-family="'Share Tech Mono',monospace">surplus</text>`;
+  legend += `<text x="${LX+52+10*(steps/2)+5}" y="${LY+10}" fill="var(--muted)" font-size="9" font-family="'Share Tech Mono',monospace" text-anchor="middle">0 kWh net</text>`;
+
+  const svg = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:${W}px;display:block;">
+    ${dowLabels}
+    ${monthLabels}
+    ${cells}
+    ${legend}
+  </svg>`;
+
+  // Tooltip
+  const tipEl = document.createElement('div');
+  tipEl.id = 'heatmap-tip';
+  tipEl.style.cssText = 'position:fixed;display:none;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:8px 12px;font-size:12px;font-family:"Share Tech Mono",monospace;color:var(--text);pointer-events:none;z-index:500;line-height:1.8;';
+  document.body.appendChild(tipEl);
+
+  // Build section
+  const sec = document.createElement('div');
+  sec.innerHTML = `
+    <div class="section-label">// SELF-SUFFICIENCY HEATMAP</div>
+    <div class="panel" style="overflow-x:auto;">
+      <div class="panel-header">
+        <div class="panel-title">Daily Net Energy — Production minus Consumption (kWh)</div>
+      </div>
+      <div style="padding:4px 0 8px;">${svg}</div>
+    </div>`;
+  main.appendChild(sec);
+
+  // Wire tooltip
+  sec.querySelectorAll('rect[data-date]').forEach(rect => {
+    rect.addEventListener('mousemove', e => {
+      const d = tipData[rect.id];
+      if (!d) return;
+      const net   = d.net_kwh >= 0 ? `+${d.net_kwh.toFixed(2)}` : d.net_kwh.toFixed(2);
+      const suff  = d.self_suff_pct != null ? `${d.self_suff_pct.toFixed(1)}%` : '—';
+      tipEl.innerHTML = `${d.date}<br>Net: <b style="color:${d.net_kwh>=0?'var(--surplus)':'var(--deficit)}'}">${net} kWh</b><br>Prod: ${d.prod_kwh.toFixed(2)} kWh<br>Cons: ${d.cons_kwh.toFixed(2)} kWh<br>Self-suff: ${suff}`;
+      tipEl.style.display = 'block';
+      tipEl.style.left = (e.clientX+14)+'px';
+      tipEl.style.top  = (e.clientY-10)+'px';
+    });
+    rect.addEventListener('mouseleave', () => { tipEl.style.display = 'none'; });
+  });
+}
+
+// ── INTERVAL DASHBOARDS ──────────────────────────────────────────────────────
+
+let _iSeason   = 'All';
+let _iErrMode  = 'sd';
+let _iPeakEV   = 'all';   // 'all' | 'noev'
+let _iDowEV    = 'all';   // 'all' | 'noev'
+let _iCharts   = { hourly: null, grid: null };
+let _dowChart  = null;
+let _iDOMBuilt = false;
+
+const SEASONS = ['All','Winter','Spring','Summer','Fall'];
+const HOURS   = Array.from({length:24}, (_,i) => `${String(i).padStart(2,'0')}:00`);
+const DOW_LBL = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+
+// ── Error bar plugin (shared) ─────────────────────────────────────────────────
+const _errPlugin = {
+  id: 'errBars',
+  afterDatasetsDraw(chart) {
+    const ctx = chart.ctx;
+    chart.data.datasets.forEach((ds, di) => {
+      if (!ds._errs) return;
+      const meta = chart.getDatasetMeta(di);
+      meta.data.forEach((bar, i) => {
+        const err = ds._errs[i] || 0;
+        if (!err) return;
+        const x      = bar.x !== undefined ? bar.x : bar.getCenterPoint().x;
+        const yScale = chart.scales.y;
+        const yVal   = Array.isArray(ds.data[i]) ? ds.data[i][1] : (typeof ds.data[i] === 'object' ? ds.data[i].y : ds.data[i]);
+        if (yVal == null) return;
+        const yPx  = yScale.getPixelForValue(yVal + err);
+        const yBase = yScale.getPixelForValue(yVal);
+        ctx.save();
+        ctx.strokeStyle = ds._errColor || ds.borderColor || '#fff';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.moveTo(x, yBase); ctx.lineTo(x, yPx); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(x-5, yPx); ctx.lineTo(x+5, yPx); ctx.stroke();
+        ctx.restore();
+      });
+    });
+  }
+};
+
+// ── Build DOM once ────────────────────────────────────────────────────────────
+function _buildIntervalDOM(hasEV = true) {
+  if (_iDOMBuilt) return;
+  const main = document.getElementById('main');
+  let sec = document.getElementById('interval-section');
+  if (!sec) { sec = document.createElement('div'); sec.id = 'interval-section'; main.appendChild(sec); }
+
+  sec.innerHTML = `
+    <div class="section-label">// 15-MIN INTERVAL ANALYTICS</div>
+    <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin-bottom:16px;" id="interval-controls">
+      <div class="toggle-group">
+        <span class="toggle-group-label">SEASON</span>
+        ${SEASONS.map(s=>`<button class="tog" data-season="${s}">${s.toUpperCase()}</button>`).join('')}
+      </div>
+      <div class="toggle-group">
+        <span class="toggle-group-label">ERROR</span>
+        <button class="tog" id="itog-sd">SD</button>
+        <button class="tog" id="itog-sem">SEM</button>
+      </div>
+    </div>
+
+    <div class="two-col" style="margin-bottom:16px;">
+      <div class="panel" style="flex:2" id="ipanel-hourly">
+        <div class="panel-header">
+          <div class="panel-title">Hour-of-Day Profile — Avg Production vs Consumption</div>
+          <div class="legend">
+            <span class="legend-item"><span class="legend-dot" style="background:var(--prod)"></span>Production</span>
+            <span class="legend-item"><span class="legend-dot" style="background:var(--cons)"></span>Consumption</span>
+          </div>
+        </div>
+        <div class="chart-wrap" style="height:280px"><canvas id="hourly-canvas"></canvas></div>
+      </div>
+
+    </div>
+
+    <div class="two-col" style="margin-bottom:16px;">
+      <div class="panel" style="flex:2" id="ipanel-grid">
+        <div class="panel-header">
+          <div class="panel-title">Grid Dependency by Hour</div>
+          <div class="legend">
+            <span class="legend-item"><span class="legend-dot" style="background:var(--deficit)"></span>Grid Import</span>
+            <span class="legend-item"><span class="legend-dot" style="background:var(--surplus)"></span>Grid Export</span>
+          </div>
+        </div>
+        <div class="chart-wrap" style="height:280px"><canvas id="grid-canvas"></canvas></div>
+      </div>
+      <div class="panel" id="ipanel-peak">
+        <div class="panel-header" style="flex-direction:column;align-items:flex-start;gap:8px;">
+          <div class="panel-title">Peak Demand Events (Top 10)</div>
+          ${hasEV ? `<div class="toggle-group">
+            <span class="toggle-group-label">EV</span>
+            <button class="tog" id="itog-all-ev">ALL</button>
+            <button class="tog" id="itog-no-ev">EXCL EV</button>
+          </div>` : ''}
+        </div>
+        <div id="peak-table-body"></div>
+      </div>
+    </div>`;
+
+  // Wire toggles — update state and refresh only, no DOM rebuild
+  sec.querySelectorAll('[data-season]').forEach(btn => {
+    btn.addEventListener('click', () => { _iSeason = btn.dataset.season; _syncIntervalToggles(); _refreshIntervalCharts(); });
+  });
+  sec.querySelector('#itog-sd').addEventListener('click',    () => { _iErrMode='sd';   _syncIntervalToggles(); _refreshIntervalCharts(); });
+  sec.querySelector('#itog-sem').addEventListener('click',   () => { _iErrMode='sem';  _syncIntervalToggles(); _refreshIntervalCharts(); });
+  if (hasEV) {
+    sec.querySelector('#itog-all-ev')?.addEventListener('click',    () => { _iPeakEV='all';   _syncIntervalToggles(); _refreshIntervalCharts(); });
+    sec.querySelector('#itog-no-ev')?.addEventListener('click',     () => { _iPeakEV='noev';  _syncIntervalToggles(); _refreshIntervalCharts(); });
+
+  }
+
+  _iDOMBuilt = true;
+}
+
+function _syncIntervalToggles() {
+  const sec = document.getElementById('interval-section');
+  if (!sec) return;
+  sec.querySelectorAll('[data-season]').forEach(b => b.classList.toggle('active', b.dataset.season === _iSeason));
+  const sdBtn  = sec.querySelector('#itog-sd');
+  const semBtn = sec.querySelector('#itog-sem');
+  if (sdBtn)  sdBtn.classList.toggle('active',  _iErrMode === 'sd');
+  if (semBtn) semBtn.classList.toggle('active', _iErrMode === 'sem');
+  sec.querySelector('#itog-all-ev')?.classList.toggle('active', _iPeakEV === 'all');
+  sec.querySelector('#itog-no-ev')?.classList.toggle('active',  _iPeakEV === 'noev');
+
+}
+
+// ── Refresh charts (no DOM rebuild) ──────────────────────────────────────────
+async function _refreshIntervalCharts() {
+  const q      = _iSeason !== 'All' ? `?season=${_iSeason}` : '';
+  const peakQ  = `/api/peak-demand?limit=10${_iPeakEV==='noev'?'&exclude_ev=true':''}`;
+
+  const [hourly, dow, grid, peaks] = await Promise.all([
+    fetch(`/api/hourly-profile${q}`).then(r=>r.json()).catch(()=>[]),
+    Promise.resolve([]),  // DOW now standalone
+    fetch(`/api/grid-dependency${q}`).then(r=>r.json()).catch(()=>[]),
+    fetch(peakQ).then(r=>r.json()).catch(()=>[]),
+  ]);
+
+  const { color, gridSoft: gridCol } = chartDefaults();
+  const tt = tooltipStyle();
+  const EK = _iErrMode;
+
+  // ── Chart 1: Hourly profile ──────────────────────────────────────────────
+  if (hourly.length) {
+    const errP = hourly.map(h => h[EK==='sd'?'sd_prod':'sem_prod'] || 0);
+    const errC = hourly.map(h => h[EK==='sd'?'sd_cons':'sem_cons'] || 0);
+    const maxY = Math.max(...hourly.map((h,i)=> Math.max(h.avg_prod+(errP[i]||0), h.avg_cons+(errC[i]||0)))) * 1.08;
+    const datasets = [
+      { label:'Production', data:hourly.map(h=>h.avg_prod), backgroundColor:'rgba(245,158,11,0.6)', borderColor:'#f59e0b', borderWidth:1, _errs:errP, _errColor:'#f59e0b' },
+      { label:'Consumption', data:hourly.map(h=>h.avg_cons), backgroundColor:'rgba(34,211,238,0.5)', borderColor:'#22d3ee', borderWidth:1, _errs:errC, _errColor:'#22d3ee' },
+    ];
+    if (_iCharts.hourly) {
+      _iCharts.hourly.data.datasets = datasets;
+      _iCharts.hourly.options.scales.y.max = maxY;
+      _iCharts.hourly.update();
+    } else {
+      const ctx = document.getElementById('hourly-canvas')?.getContext('2d');
+      if (ctx) _iCharts.hourly = new Chart(ctx, {
+        type:'bar', plugins:[_errPlugin],
+        data:{ labels:HOURS, datasets },
+        options:{ responsive:true, maintainAspectRatio:false,
+          plugins:{ legend:{display:false}, tooltip:{...tt, callbacks:{
+            label: c => `${c.dataset.label}: ${c.parsed.y.toFixed(3)} kWh`,
+            afterLabel: c => { const e=c.dataset._errs?.[c.dataIndex]; return e?`±${e.toFixed(3)} (${EK.toUpperCase()})`:''; }
+          }}},
+          scales:{
+            x:{ ticks:{color, font:{family:"'Share Tech Mono',monospace",size:11}}, grid:{color:gridCol}, border:{color:gridCol} },
+            y:{ max:maxY, ticks:{color, font:{family:"'Share Tech Mono',monospace",size:11}, callback:v=>v.toFixed(2)}, grid:{color:gridCol}, border:{color:gridCol} },
+          }
+        }
+      });
+    }
+  }
+
+  // ── Chart 3: Grid dependency ──────────────────────────────────────────────
+  if (grid.length) {
+    const errI = grid.map(g => g[EK==='sd'?'sd_imp':'sem_imp'] || 0);
+    const errE = grid.map(g => g[EK==='sd'?'sd_exp':'sem_exp'] || 0);
+    const maxYg = Math.max(...grid.map((g,i)=> Math.max(g.avg_imp+(errI[i]||0), g.avg_exp+(errE[i]||0)))) * 1.08;
+    const gDatasets = [
+      { label:'Grid Import', data:grid.map(g=>g.avg_imp), backgroundColor:'rgba(239,68,68,0.55)', borderColor:'#ef4444', borderWidth:1, _errs:errI, _errColor:'#ef4444' },
+      { label:'Grid Export', data:grid.map(g=>g.avg_exp), backgroundColor:'rgba(74,222,128,0.55)', borderColor:'#4ade80', borderWidth:1, _errs:errE, _errColor:'#4ade80' },
+    ];
+    if (_iCharts.grid) {
+      _iCharts.grid.data.datasets = gDatasets;
+      _iCharts.grid.options.scales.y.max = maxYg;
+      _iCharts.grid.update();
+    } else {
+      const ctx = document.getElementById('grid-canvas')?.getContext('2d');
+      if (ctx) _iCharts.grid = new Chart(ctx, {
+        type:'bar', plugins:[_errPlugin],
+        data:{ labels:HOURS, datasets:gDatasets },
+        options:{ responsive:true, maintainAspectRatio:false,
+          plugins:{ legend:{display:false}, tooltip:{...tt, callbacks:{
+            label: c => `${c.dataset.label}: ${c.parsed.y.toFixed(3)} kWh`,
+          }}},
+          scales:{
+            x:{ ticks:{color, font:{family:"'Share Tech Mono',monospace",size:11}}, grid:{color:gridCol}, border:{color:gridCol} },
+            y:{ max:maxYg, ticks:{color, font:{family:"'Share Tech Mono',monospace",size:11}, callback:v=>v.toFixed(2)}, grid:{color:gridCol}, border:{color:gridCol} },
+          }
+        }
+      });
+    }
+  }
+
+  // ── Peak demand table ─────────────────────────────────────────────────────
+  const peakBody = document.getElementById('peak-table-body');
+  if (peakBody) {
+    const hdr = `<div style="display:grid;grid-template-columns:24px 90px 55px 1fr 1fr;gap:0 10px;padding:0 4px 8px;border-bottom:1px solid var(--border);font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;">
+      <span>#</span><span>Date</span><span>Time</span><span>kWh</span><span>Source</span></div>`;
+    const rows = peaks.map((p,i) => `
+      <div style="display:grid;grid-template-columns:24px 90px 55px 1fr 1fr;gap:0 10px;padding:6px 4px;border-bottom:1px solid var(--border);font-size:12px;font-family:monospace;${i===peaks.length-1?'border-bottom:none;':''}">
+        <span style="color:var(--muted)">${i+1}</span>
+        <span style="color:var(--text)">${p.date}</span>
+        <span style="color:var(--prod)">${p.time_label}</span>
+        <span style="color:var(--deficit)">${(p.cons_wh/1000).toFixed(3)}</span>
+        <span style="color:var(--muted)">${p.imported_wh>0?'grid':'solar'}</span>
+      </div>`).join('');
+    peakBody.innerHTML = peaks.length
+      ? hdr + rows
+      : '<div style="color:var(--muted);font-size:12px;padding:12px 4px;">No interval data yet</div>';
+  }
+}
+
+async function renderIntervalDashboards(hasEV = true) {
+  // Ensure DOM exists (built only once), then refresh charts
+  const main = document.getElementById('main');
+  // Move section to main if needed (loadDashboard rebuilds main.innerHTML)
+  let sec = document.getElementById('interval-section');
+  if (!sec || !main.contains(sec)) {
+    _iDOMBuilt = false;
+    if (sec) sec.remove();
+  }
+  _buildIntervalDOM(hasEV);
+  _syncIntervalToggles();
+  await _refreshIntervalCharts();
+}
+
+async function updateConflictBadge() {
+  try {
+    const s = await fetch('/api/settings').then(r => r.json());
+    const badge = document.getElementById('conflict-badge');
+    if (!badge) return;
+    const n = s.conflict_count || 0;
+    if (n > 0) {
+      badge.textContent = n > 9 ? '9+' : n;
+      badge.style.display = 'flex';
+    } else {
+      badge.style.display = 'none';
+    }
+  } catch(_) {}
+}
+
+window.onerror = (msg, src, line, col, err) => {
+  const main = document.getElementById('main');
+  if (main && !main.querySelector('.chart-wrap')) {
+    main.innerHTML = `<div class="empty-state"><div class="icon">⚠</div><h2>JS Error</h2>
+      <p style="font-family:monospace;font-size:11px;color:var(--deficit);max-width:600px;word-break:break-all;">
+      ${msg}<br>Line ${line}:${col}</p></div>`;
+  }
+  return false;
+};
+loadDashboard();
+</script>
+</body>
+</html>
