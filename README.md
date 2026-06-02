@@ -2,7 +2,7 @@
 
 A self-hosted solar energy dashboard for your homelab. Visualises solar production, household consumption, EV charging, and grid import/export — all from CSV exports your monitoring system already provides.
 
-**Version:** 0.1.0-beta | **Stack:** Python · FastAPI · SQLite · Vanilla JS · Chart.js | **Container:** Single Docker container
+**Version:** 0.2.0-beta | **Stack:** Python · FastAPI · SQLite · Vanilla JS · Chart.js | **Container:** Single Docker container
 
 ---
 
@@ -51,26 +51,60 @@ No other dependencies. Everything else runs inside the container.
 
 ## Installation
 
+Two options — download a release zip or clone from git. Both result in the same setup.
+
+### Option A — Download a release (recommended)
+
+Download the latest release from the [Releases page](https://github.com/indigoslim/wattwise/releases).
+
 ```bash
-# 1. Get the files
-git clone https://github.com/youruser/wattwise.git
+# 1. Download the latest release zip
+curl -L https://github.com/indigoslim/wattwise/releases/download/v0.2.0-beta/wattwise_v0.2.0-beta.zip \
+  -o wattwise.zip
+
+# 2. (Optional but recommended) Verify the download hash
+shasum -a 256 wattwise.zip
+# Compare the output against the SHA256 shown on the GitHub release page
+# If they match, the file is intact and unmodified
+
+# 3. Unzip and enter the directory
+unzip wattwise.zip && cd wattwise
+
+# 4. Create your environment file
+cp .env.example .env
+
+# 5. Edit .env — minimum required: set TZ to your timezone
+#    Example: TZ=America/New_York  or  TZ=Europe/London  or  TZ=Australia/Sydney
+nano .env
+
+# 6. Build and start
+docker compose up -d --build
+
+# 7. Check it started cleanly
+docker compose logs -f
+# Press Ctrl+C to stop watching logs
+
+# 8. Open the dashboard
+# http://localhost:9521
+```
+
+### Option B — Clone from git
+
+```bash
+# 1. Clone the repo
+git clone https://github.com/indigoslim/wattwise.git
 cd wattwise
 
 # 2. Create your environment file
 cp .env.example .env
 
-# 3. Edit .env — minimum required: set TZ to your timezone
-#    Example: TZ=America/New_York  or  TZ=Europe/London  or  TZ=Australia/Sydney
+# 3. Edit .env — set TZ to your timezone
 nano .env
 
 # 4. Build and start
 docker compose up -d --build
 
-# 5. Check it started cleanly
-docker compose logs -f
-# Press Ctrl+C to stop watching logs
-
-# 6. Open the dashboard
+# 5. Open the dashboard
 # http://localhost:9521
 ```
 
@@ -246,10 +280,33 @@ See [DOCKER.md](DOCKER.md) for bind mount configuration. If the backup directory
 
 Your data lives in named Docker volumes and is unaffected by container rebuilds.
 
+### From a release zip
+
+```bash
+# 1. Download the new release zip and verify its hash (see Releases page)
+curl -L https://github.com/indigoslim/wattwise/releases/download/v0.2.0-beta/wattwise_v0.2.0-beta.zip \
+  -o wattwise_new.zip
+shasum -a 256 wattwise_new.zip
+
+# 2. Stop the container
+docker compose down
+
+# 3. Unzip over your existing directory (keep your .env — do not overwrite it)
+unzip -o wattwise_new.zip
+cp -r wattwise/* .
+cp wattwise/.gitignore . 2>/dev/null
+rm -rf wattwise wattwise_new.zip
+
+# 4. Rebuild and start
+docker compose up -d --build --no-cache
+docker compose logs -f
+```
+
+### From git
+
 ```bash
 docker compose down
-# Replace the project files with the new version
-# Keep your existing .env — do not overwrite it
+git pull origin main
 docker compose up -d --build --no-cache
 docker compose logs -f
 ```

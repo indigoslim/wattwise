@@ -9,6 +9,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 - CLEAR button on date range picker to reset to full dataset
+- Release zip install option in README with SHA256 hash verification instructions
+- `CHANGELOG.md` added to track all version changes going forward
 
 ### Changed
 - Dark theme is now the default (was system preference)
@@ -21,6 +23,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Trend, DOW, and YoY charts standardised to 300px height
 - `two-col` panels now stretch to equal height within each row
 - Monthly + YoY panels now match height of adjacent rows
+- README installation section expanded — Option A (release zip + hash verify) and Option B (git clone)
+- README upgrading section covers both zip and git upgrade paths
 
 ### Fixed
 - Stat cards no longer different sizes — fixed 4-column grid regardless of content
