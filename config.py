@@ -50,12 +50,12 @@ PORT: int = int(os.getenv("PORT", "9521"))
 
 # ── APP ──────────────────────────────────────────────────────────────────────
 APP_TITLE:   str = "Wattwise"
-APP_VERSION: str = "0.1.0-beta"
+APP_VERSION: str = "0.2.0-beta"
 
 # ── VERSIONS ─────────────────────────────────────────────────────────────────
 # BE increments on any Python file change; FE increments on index.html change.
-BE_VERSION: str = "0.1.0-beta"
-FE_VERSION: str = "0.1.0-beta"
+BE_VERSION: str = "0.2.0-beta"
+FE_VERSION: str = "0.2.0-beta"
 
 # ── IMPORT LIMITS ─────────────────────────────────────────────────────────────
 MAX_UPLOAD_BYTES: int = 50 * 1024 * 1024   # 50 MB per file
