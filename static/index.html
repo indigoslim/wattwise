@@ -222,7 +222,7 @@ main {
 /* ── STAT CARDS ──────────────────────────────────────────────────────────── */
 .cards-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: 10px;
 }
 
@@ -1810,7 +1810,6 @@ function renderCards(s, hasEV = true) {
 
   const grid = document.createElement('div');
   grid.className = 'cards-grid';
-  grid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(220px, 1fr))';
 
   cards.forEach(c => {
     const el = document.createElement('div');
