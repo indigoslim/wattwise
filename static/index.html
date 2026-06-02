@@ -163,19 +163,6 @@ header {
   cursor: pointer;
 }
 .date-range-bar input[type=date]:focus { outline: none; border-color: var(--prod); }
-.date-preset {
-  background: var(--bg3);
-  border: 1px solid var(--border);
-  border-radius: 3px;
-  color: var(--muted);
-  font-family: 'Share Tech Mono', monospace;
-  font-size: 10px;
-  padding: 3px 7px;
-  cursor: pointer;
-  letter-spacing: 1px;
-  transition: all 0.15s;
-}
-.date-preset:hover, .date-preset.active { border-color: var(--prod); color: var(--prod); }
 
 /* ── STATUS BAR ──────────────────────────────────────────────────────────── */
 .status-bar {
@@ -195,19 +182,13 @@ header {
 main {
   padding: 20px 24px 40px;
   display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 22px;
   max-width: 1400px;
+  width: 100%;
   margin: 0 auto;
-  align-items: flex-start;
+  box-sizing: border-box;
 }
-
-/* Full-width section — takes whole row */
-.section-full { flex: 0 0 100%; min-width: 0; }
-
-/* Half-width section — two per row, with gap accounted for */
-.section-half { flex: 0 0 calc(50% - 11px); min-width: 0; }
 
 /* ── SECTION LABEL ───────────────────────────────────────────────────────── */
 .section-label {
@@ -515,6 +496,10 @@ main {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
+  align-items: stretch;
+}
+.two-col > * {
+  min-width: 0;
 }
 
 /* ── MODAL ───────────────────────────────────────────────────────────────── */
@@ -996,49 +981,12 @@ window._charts = { scatter: null, monthly: null, yoy: null, trend: null };
 // ── DATE RANGE STATE ──────────────────────────────────────────────────────────
 let _drFrom = null;   // ISO string or null (null = use API default)
 let _drTo   = null;
-let _drPreset = 'all';
 
 function _drBuildQuery() {
   const params = [];
   if (_drFrom) params.push(`from_date=${_drFrom}`);
   if (_drTo)   params.push(`to_date=${_drTo}`);
   return params.length ? '?' + params.join('&') : '';
-}
-
-function _drSetPreset(preset) {
-  _drPreset = preset;
-  const today = new Date();
-  const fmt   = d => d.toISOString().slice(0,10);
-  const fromInput = document.getElementById('dr-from');
-  const toInput   = document.getElementById('dr-to');
-  document.querySelectorAll('.date-preset').forEach(b => b.classList.remove('active'));
-  const btn = document.querySelector(`[data-preset="${preset}"]`);
-  if (btn) btn.classList.add('active');
-
-  if (preset === 'all') {
-    _drFrom = null; _drTo = null;
-    if (fromInput) fromInput.value = '';
-    if (toInput)   toInput.value   = '';
-  } else if (preset === '30d') {
-    const d = new Date(today); d.setDate(d.getDate()-30);
-    _drFrom = fmt(d); _drTo = fmt(today);
-    if (fromInput) fromInput.value = _drFrom;
-    if (toInput)   toInput.value   = _drTo;
-  } else if (preset === '90d') {
-    const d = new Date(today); d.setDate(d.getDate()-90);
-    _drFrom = fmt(d); _drTo = fmt(today);
-    if (fromInput) fromInput.value = _drFrom;
-    if (toInput)   toInput.value   = _drTo;
-  } else if (preset === '1y') {
-    const d = new Date(today); d.setFullYear(d.getFullYear()-1);
-    _drFrom = fmt(d); _drTo = fmt(today);
-    if (fromInput) fromInput.value = _drFrom;
-    if (toInput)   toInput.value   = _drTo;
-  } else if (preset === 'ytd') {
-    _drFrom = fmt(today).slice(0,4) + '-01-01'; _drTo = fmt(today);
-    if (fromInput) fromInput.value = _drFrom;
-    if (toInput)   toInput.value   = _drTo;
-  }
 }
 
 // Date range controls wired inside renderCards
@@ -1260,11 +1208,11 @@ async function loadDashboard() {
   } catch(_) {}
 
   try {
-    const drQSum = _drFrom ? `?from_date=${_drFrom}&to_date=${_drTo || ''}`.replace(/&to_date=$/, '') : '';
+    const drQ = _drBuildQuery();
     const [summaryRes, dailyRes, monthlyRes] = await Promise.all([
-      fetch(`/api/summary${drQSum}`),
-      fetch('/api/daily'),
-      fetch('/api/monthly'),
+      fetch(`/api/summary${drQ}`),
+      fetch(`/api/daily${drQ}`),
+      fetch(`/api/monthly${drQ}`),
     ]);
 
     // If any API route returned non-2xx, log the status and show empty state
@@ -1781,14 +1729,12 @@ function renderCards(s, hasEV = true) {
   drBar.style.cssText = 'display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px;font-family:"Share Tech Mono",monospace;font-size:11px;color:var(--muted);';
   const _mono = 'font-family:monospace;';
   drBar.innerHTML =
-    '<span>RANGE:</span>' +
+    '<span>FROM:</span>' +
     '<input type="date" id="dr-from" style="background:var(--bg2);border:1px solid var(--border);border-radius:3px;color:var(--text);' + _mono + 'font-size:11px;padding:3px 7px;">' +
-    '<span>→</span>' +
+    '<span>TO:</span>' +
     '<input type="date" id="dr-to"   style="background:var(--bg2);border:1px solid var(--border);border-radius:3px;color:var(--text);' + _mono + 'font-size:11px;padding:3px 7px;">' +
-    ['all','1y','ytd','90d','30d'].map(p =>
-      '<button class="date-preset' + (_drPreset===p?' active':'') + '" data-preset="' + p + '" style="background:var(--bg3);border:1px solid var(--border);border-radius:3px;color:var(--muted);' + _mono + 'font-size:10px;padding:3px 7px;cursor:pointer;letter-spacing:1px;">' + p.toUpperCase() + '</button>'
-    ).join('') +
-    '<button id="dr-apply" style="background:var(--bg3);border:1px solid var(--prod);border-radius:3px;color:var(--prod);' + _mono + 'font-size:10px;padding:3px 7px;cursor:pointer;letter-spacing:1px;">APPLY</button>';
+    '<button id="dr-apply" style="background:var(--bg3);border:1px solid var(--prod);border-radius:3px;color:var(--prod);' + _mono + 'font-size:10px;padding:3px 7px;cursor:pointer;letter-spacing:1px;">APPLY</button>' +
+    '<button id="dr-clear" style="background:var(--bg3);border:1px solid var(--border);border-radius:3px;color:var(--muted);' + _mono + 'font-size:10px;padding:3px 7px;cursor:pointer;letter-spacing:1px;">CLEAR</button>';
   sec.appendChild(drBar);
 
   // Restore saved date inputs and wire events
@@ -1796,15 +1742,14 @@ function renderCards(s, hasEV = true) {
   const drTo   = drBar.querySelector('#dr-to');
   if (_drFrom) drFrom.value = _drFrom;
   if (_drTo)   drTo.value   = _drTo;
-  drBar.querySelectorAll('[data-preset]').forEach(btn => {
-    btn.addEventListener('click', () => { _drSetPreset(btn.dataset.preset); loadDashboard(); });
-  });
   drBar.querySelector('#dr-apply').addEventListener('click', () => {
     _drFrom = drFrom.value || null;
     _drTo   = drTo.value   || null;
-    _drPreset = 'custom';
-    drBar.querySelectorAll('[data-preset]').forEach(b => b.classList.remove('active'));
-    drBar.querySelector('#dr-apply').style.borderColor = 'var(--prod)';
+    loadDashboard();
+  });
+  drBar.querySelector('#dr-clear').addEventListener('click', () => {
+    _drFrom = null; _drTo = null;
+    drFrom.value = ''; drTo.value = '';
     loadDashboard();
   });
 
@@ -2087,7 +2032,7 @@ function _buildScatter() {
         </div>
         <div class="year-chips" id="year-chips" style="display:none">${yearChips}</div>
       </div>
-      <div class="chart-wrap" style="height:340px"><canvas id="scatter-canvas"></canvas></div>
+      <div class="chart-wrap" style="height:360px"><canvas id="scatter-canvas"></canvas></div>
     </div>`;
   row.appendChild(wrap);
 
@@ -2255,7 +2200,7 @@ function _buildTrend(container) {
           <span class="legend-item"><span class="legend-dot" style="background:var(--deficit)"></span>Deficit</span>
         </div>
       </div>
-      <div class="chart-wrap" style="height:340px"><canvas id="trend-canvas"></canvas></div>
+      <div class="chart-wrap" style="height:300px"><canvas id="trend-canvas"></canvas></div>
     </div>`;
   row.appendChild(wrap);
 
@@ -2477,7 +2422,7 @@ function renderMonthlyAndYoY(monthly, daily, hasEV = true) {
         </div>
       </div>
     </div>
-    <div class="chart-wrap" style="height:220px"><canvas id="yoy-canvas"></canvas></div>`;
+    <div class="chart-wrap" style="height:300px"><canvas id="yoy-canvas"></canvas></div>`;
   two.appendChild(rightPanel);
 
   sec.appendChild(two);
@@ -3131,7 +3076,7 @@ async function renderSolarFingerprint(daily) {
   // Canvas
   const wrap = document.createElement('div');
   wrap.className = 'chart-wrap';
-  wrap.style.height = '380px';
+  wrap.style.height = '360px';
   const canvas = document.createElement('canvas');
   canvas.id = 'solar-canvas';
   wrap.appendChild(canvas);
