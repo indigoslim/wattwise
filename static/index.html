@@ -879,7 +879,7 @@ function tooltipStyle() {
 
 // ── THEME ─────────────────────────────────────────────────────────────────────
 const html = document.documentElement;
-const THEME_KEY = 'energy_theme';
+const THEME_KEY = 'wattwise_theme';
 let systemDark = window.matchMedia('(prefers-color-scheme: dark)');
 
 function applyTheme(mode) {
@@ -941,7 +941,7 @@ window._hasInterval = false;
 window._hasEV       = false;
 
 // ── DASHBOARD PREFS (S-04) ───────────────────────────────────────────────────
-const PREFS_KEY = 'energy_dashboard_prefs';
+const PREFS_KEY = 'wattwise_prefs';
 const SECTIONS  = [
   { key: 'cards',    label: 'Stat Cards',                    half: false },
   { key: 'scatter',  label: 'Prod vs Cons Scatter',          half: false },
@@ -949,7 +949,7 @@ const SECTIONS  = [
   { key: 'dow',      label: 'Day-of-Week Consumption',       half: true  },
   { key: 'myoy',     label: 'Monthly + Year-over-Year',      half: false },
   { key: 'solar',    label: 'Solar Fingerprint',             half: false, requiresInterval: true },
-  { key: 'interval', label: 'Interval Analytics (15-min)',   half: false, requiresInterval: true },
+  { key: 'interval', label: 'Interval Analytics (15-min)',   half: false, requiresInterval: true, defaultOff: true },
 ];
 const SECTION_MAP = Object.fromEntries(SECTIONS.map(s => [s.key, s]));
 
@@ -959,7 +959,10 @@ function _loadPrefs() {
 
 function _sectionVisible(key) {
   const p = _loadPrefs();
-  return p[key] !== false;  // default true if not set
+  if (p[key] !== undefined) return p[key] !== false;
+  // If not in prefs yet, use defaultOff from SECTIONS registry
+  const sec = SECTION_MAP[key];
+  return !sec?.defaultOff;
 }
 
 function _getSectionOrder() {
@@ -1607,11 +1610,6 @@ function _renderWizard(step) {
       <div class="wiz-title">System dates &amp; timezone</div>
       <div class="wiz-sub">These dates tell the dashboard when your data became reliable. All fields are optional — leave blank to show all data.</div>
       <div class="wiz-field">
-        <div class="wiz-label">Port</div>
-        <input class="wiz-input" type="number" id="wiz-port" min="1" max="65535" placeholder="9521" value="` + (_wizData.port||'9521') + `">
-        <div class="wiz-hint">The port this dashboard listens on. Default is 9521. Change in .env if you need a different port — this is saved for display purposes.</div>
-      </div>
-      <div class="wiz-field">
         <div class="wiz-label">Timezone</div>
         <input class="wiz-input" type="text" id="wiz-tz" placeholder="e.g. America/New_York  Europe/London  Australia/Sydney" value="` + (_wizData.timezone||'') + `">
         <div class="wiz-hint">IANA timezone string. Must match your monitoring system's export timezone.</div>
@@ -1638,7 +1636,7 @@ function _renderWizard(step) {
   }
 
   else if (step === 'done') {
-    const port = _wizData.port || '9521';
+    const port = window.location.port || '9521';
     const host = window.location.hostname;
     const url  = 'http://' + host + ':' + port;
     h += `<div style="text-align:center;padding:16px 0">
@@ -1696,7 +1694,6 @@ function _renderWizard(step) {
     back.onclick = () => _renderWizard('ev');
     next.onclick = () => _renderWizard('dates');
   } else if (step === 'dates') {
-    document.getElementById('wiz-port').oninput  = e => _wizSave('port',       e.target.value.trim() || '9521');
     document.getElementById('wiz-tz').oninput    = e => _wizSave('timezone',   e.target.value.trim());
     document.getElementById('wiz-cons').onchange = e => _wizSave('cons_start', e.target.value);
     document.getElementById('wiz-prod').onchange = e => _wizSave('prod_start', e.target.value);
@@ -2082,7 +2079,7 @@ function _buildScatter() {
             <button class="tog active-ev" id="tog-withev"   >WITH EV</button>
             <button class="tog"           id="tog-withoutev">NO EV</button>
           </div>` : ''}
-          <div class="toggle-group">
+          <div class="toggle-group" style="display:none">
             <span class="toggle-group-label">FIT</span>
             <button class="tog active" id="tog-fit-off"  >OFF</button>
             <button class="tog"        id="tog-fit-loess">LOESS</button>
@@ -2434,8 +2431,9 @@ function renderMonthlyAndYoY(monthly, daily, hasEV = true) {
         <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted)">MWh</div>
       </div>
       <div class="toggle-group">
-        <button class="tog active" id="err-sd" >+SD</button>
-        <button class="tog"        id="err-sem">+SEM</button>
+        <span class="toggle-group-label">SD</span>
+        <button class="tog active" id="err-sd"  >ON</button>
+        <button class="tog"        id="err-none">OFF</button>
       </div>
     </div>
     <div class="monthly-grid" id="monthly-bars"></div>`;
@@ -2444,14 +2442,14 @@ function renderMonthlyAndYoY(monthly, daily, hasEV = true) {
   leftPanel.querySelector('#err-sd').addEventListener('click', () => {
     _errMode = 'sd';
     _rebuildMonthlyBars(monthStats, leftPanel.querySelector('#monthly-bars'));
-    leftPanel.querySelector('#err-sd').className  = 'tog active';
-    leftPanel.querySelector('#err-sem').className = 'tog';
+    leftPanel.querySelector('#err-sd').className   = 'tog active';
+    leftPanel.querySelector('#err-none').className = 'tog';
   });
-  leftPanel.querySelector('#err-sem').addEventListener('click', () => {
-    _errMode = 'sem';
+  leftPanel.querySelector('#err-none').addEventListener('click', () => {
+    _errMode = 'none';
     _rebuildMonthlyBars(monthStats, leftPanel.querySelector('#monthly-bars'));
-    leftPanel.querySelector('#err-sd').className  = 'tog';
-    leftPanel.querySelector('#err-sem').className = 'tog active';
+    leftPanel.querySelector('#err-sd').className   = 'tog';
+    leftPanel.querySelector('#err-none').className = 'tog active';
   });
 
   _rebuildMonthlyBars(monthStats);
@@ -2648,11 +2646,11 @@ function _rebuildMonthlyBars(monthStats, barsEl) {
   barsEl.innerHTML = '';
 
   // Scale: max = highest mean + upper error
-  const maxVal = Math.max(...monthStats.map(s => s.mean + (_errMode === 'sd' ? s.sd : s.sem)), 1);
+  const maxVal = Math.max(...monthStats.map(s => s.mean + (_errMode === 'sd' ? s.sd : 0)), 1);
 
   MONTHS.forEach((mo, i) => {
     const { mean, sd, sem, n } = monthStats[i];
-    const err    = _errMode === 'sd' ? sd : sem;
+    const err    = _errMode === 'sd' ? sd : 0;
     const hasErr = n >= 2;
 
     const wMean  = Math.min(mean         / maxVal * 100, 100);
@@ -2751,7 +2749,6 @@ async function renderSettings() {
       <div class="settings-section">
         <div class="settings-section-title">// SYSTEM SETUP</div>
         <div style="font-size:12px;color:var(--muted);margin-bottom:14px;">Configuration saved during onboarding. Edit and save to update.</div>
-        <div class="settings-row"><span class="settings-row-label">Port</span><span class="settings-row-value">${sysRes.setup?.port||'9521'}</span></div>
         <div class="settings-row"><span class="settings-row-label">Data Type</span><span class="settings-row-value">${sysRes.setup?.data_type||'—'}</span></div>
         <div class="settings-row"><span class="settings-row-label">EV Tracking</span><span class="settings-row-value">${sysRes.setup?.has_ev||'—'}</span></div>
         <div class="settings-row"><span class="settings-row-label">Battery</span><span class="settings-row-value">${sysRes.setup?.has_battery||'—'}</span></div>
@@ -3113,7 +3110,7 @@ async function renderSolarFingerprint(daily) {
   dstGroup.className = 'toggle-group';
   const dstLbl = document.createElement('span');
   dstLbl.className = 'toggle-group-label';
-  dstLbl.textContent = 'DST';
+  dstLbl.textContent = 'TIME ADJ.';
   dstGroup.appendChild(dstLbl);
   const sfDstOn = document.createElement('button');
   sfDstOn.className = 'tog' + (!_sfDSTOff ? ' active' : '');
@@ -3337,28 +3334,15 @@ async function renderDOW(hasEV) {
   const ctrl = document.createElement('div');
   ctrl.style.cssText = 'display:flex;gap:14px;flex-wrap:wrap;align-items:center;';
 
-  // Season toggle
-  const seasGrp = document.createElement('div'); seasGrp.className = 'toggle-group';
-  const seasLbl2 = document.createElement('span'); seasLbl2.className = 'toggle-group-label'; seasLbl2.textContent = 'SEASON';
-  seasGrp.appendChild(seasLbl2);
-  ['All','Winter','Spring','Summer','Fall'].forEach(s => {
-    const b = document.createElement('button');
-    b.className = 'tog' + (s === _dowSeason ? ' active' : '');
-    b.dataset.dowseason = s;
-    b.textContent = s.toUpperCase();
-    seasGrp.appendChild(b);
-  });
-  ctrl.appendChild(seasGrp);
-
-  // Error mode toggle
+  // Error mode toggle — SD on/off only
   const errGrp = document.createElement('div'); errGrp.className = 'toggle-group';
   const errLbl2 = document.createElement('span'); errLbl2.className = 'toggle-group-label'; errLbl2.textContent = 'ERROR';
   errGrp.appendChild(errLbl2);
-  ['sd','sem'].forEach(m => {
+  [['sd','+ SD'],['none','NONE']].forEach(([val, label]) => {
     const b = document.createElement('button');
-    b.className = 'tog' + (m === _dowErrMode ? ' active' : '');
-    b.dataset.dowerr = m;
-    b.textContent = m.toUpperCase();
+    b.className = 'tog' + ((_dowErrMode === val || (val === 'sd' && _dowErrMode === 'sd')) ? ' active' : '');
+    b.dataset.dowerr = val;
+    b.textContent = label;
     errGrp.appendChild(b);
   });
   ctrl.appendChild(errGrp);
@@ -3390,13 +3374,6 @@ async function renderDOW(hasEV) {
   panel.appendChild(wrap);
   sec.appendChild(panel);
 
-  sec.querySelectorAll('[data-dowseason]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      _dowSeason = btn.dataset.dowseason;
-      sec.querySelectorAll('[data-dowseason]').forEach(b => b.classList.toggle('active', b.dataset.dowseason === _dowSeason));
-      _refreshDOW(sec);
-    });
-  });
   sec.querySelectorAll('[data-dowerr]').forEach(btn => {
     btn.addEventListener('click', () => {
       _dowErrMode = btn.dataset.dowerr;
@@ -3417,8 +3394,7 @@ async function renderDOW(hasEV) {
 
 async function _refreshDOW(sec) {
   let q = '';
-  if (_dowSeason !== 'All') q += '?season=' + _dowSeason;
-  if (_dowEV === 'noev')   q += (q ? '&' : '?') + 'exclude_ev=true';
+  if (_dowEV === 'noev') q += '?exclude_ev=true';
 
   const dow = await fetch('/api/dow-profile' + q).then(r=>r.json()).catch(()=>[]);
   if (!dow.length) return;
@@ -3427,7 +3403,7 @@ async function _refreshDOW(sec) {
 
   const { color, gridSoft } = chartDefaults();
   const tt = tooltipStyle();
-  const EK = _dowErrMode;
+  const EK = _dowErrMode;   // 'sd' or 'none'
 
   const dotData = [], meanData = [];
   dow.forEach((d,i) => {
@@ -3435,7 +3411,7 @@ async function _refreshDOW(sec) {
     (d.days||[]).forEach(val => { dotData.push({x: i + (Math.random()-0.5)*0.5, y:val}); });
   });
   const maxYdow = Math.max(
-    ...meanData.map((m,i) => m.y + (dow[i]?.[EK==='sd'?'sd_cons':'sem_cons']||0)),
+    ...meanData.map((m,i) => m.y + (EK === 'sd' ? (dow[i]?.sd_cons||0) : 0)),
     ...dotData.map(d => d.y)
   ) * 1.08;
 
@@ -3446,7 +3422,7 @@ async function _refreshDOW(sec) {
     { label:'Mean', data:meanData, type:'scatter',
       backgroundColor:'#f59e0b', borderColor:'#f59e0b',
       pointStyle:'line', pointRadius:12, pointBorderWidth:3, pointHoverRadius:12,
-      _errs: dow.map(d=>d[EK==='sd'?'sd_cons':'sem_cons']||0), _errColor:'#f59e0b' },
+      _errs: dow.map(d => EK === 'sd' ? (d.sd_cons||0) : 0), _errColor:'#f59e0b' },
   ];
 
   const ctx = sec.querySelector('#dow-canvas')?.getContext('2d');

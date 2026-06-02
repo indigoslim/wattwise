@@ -381,7 +381,7 @@ async def save_setup(request: Request) -> JSONResponse:
       cons_start    — ISO date YYYY-MM-DD (system install / consumption valid from)
       prod_start    — ISO date YYYY-MM-DD (solar production fully valid from)
       net_start     — ISO date YYYY-MM-DD (default display floor)
-      port          — port number (default 9521, for display purposes)
+      port          — removed (auto-detected from browser URL)
       timezone      — IANA timezone string e.g. 'America/New_York'
       data_type     — 'interval' or 'daily'
       has_ev        — 'true' / 'false'
@@ -395,7 +395,7 @@ async def save_setup(request: Request) -> JSONResponse:
 
     allowed = {
         "cons_start", "prod_start", "net_start",
-        "timezone", "data_type", "has_ev", "has_battery", "port", "setup_complete",
+        "timezone", "data_type", "has_ev", "has_battery", "setup_complete",
     }
     filtered = {k: v for k, v in data.items() if k in allowed}
     if not filtered:
