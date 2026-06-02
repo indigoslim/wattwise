@@ -920,7 +920,7 @@ systemDark.addEventListener('change', () => {
   if ((localStorage.getItem(THEME_KEY) || 'system') === 'system') applyTheme('system');
 });
 
-applyTheme(localStorage.getItem(THEME_KEY) || 'system');
+applyTheme(localStorage.getItem(THEME_KEY) || 'dark');
 
 // ── GLOBAL DATA FLAGS ───────────────────────────────────────────────────────────
 window._hasInterval = false;
@@ -2629,8 +2629,7 @@ function _rebuildMonthlyBars(monthStats, barsEl) {
 // ── SETTINGS PAGE ────────────────────────────────────────────────────────────
 async function renderSettings() {
   const main = document.getElementById('main');
-  main.innerHTML = '<div class="settings-page"><button class="settings-back" id="settings-back">← BACK TO DASHBOARD</button><div id="settings-content"><div style="color:var(--muted);font-size:12px;">Loading…</div></div><div style="position:sticky;bottom:0;background:var(--bg3);border-top:1px solid var(--border);padding:10px 0;margin-top:24px;"><button class="settings-back" id="settings-back-bottom" style="padding:0;">← BACK TO DASHBOARD</button></div></div>';
-  document.getElementById('settings-back').addEventListener('click', () => loadDashboard());
+  main.innerHTML = '<div class="settings-page"><div id="settings-content"><div style="color:var(--muted);font-size:12px;">Loading…</div></div><div style="position:sticky;bottom:0;background:var(--bg3);border-top:1px solid var(--border);padding:10px 0;margin-top:24px;"><button class="settings-back" id="settings-back-bottom" style="padding:0;">← BACK TO DASHBOARD</button></div></div>';
   document.getElementById('settings-back-bottom').addEventListener('click', () => loadDashboard());
 
   const sc = document.getElementById('settings-content');
